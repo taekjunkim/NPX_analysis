@@ -1,0 +1,23 @@
+### Pre-processing procedure ###
+
+1. Sort multiple bin files in chronological order
+   - nidq.bin
+   - ap.bin
+
+2. Make merged ap.bin
+   - Get nFileSamp, syncON from each ap.bin
+
+3. Run Kilosort
+
+4. Make spikets
+
+5. Run analysis_code: with nidq.bin, dat file, kilosort output
+
+   - ParseTJexperiment_NPX 
+     : spikets from kilosort output, nFileSamp, syncON
+
+     : markerts, pdOnTS, pdOffTS from nidq.bin
+     : markervals from dat file
+
+
+
