@@ -67,6 +67,7 @@ class MainWindow(QMainWindow):
         self.combobox.addItems(['Texture3Ver']);                               
         self.combobox.addItems(['StimDuration']);                                         
         self.combobox.addItems(['SurroundMap']);                                                 
+        self.combobox.addItems(['Kiani_gaze']);                                                         
 
         self.tasknum_label = QtWidgets.QLabel(); 
         self.tasknum_label.setText('task idx in combined file')
@@ -181,6 +182,9 @@ class MainWindow(QMainWindow):
             print('Not ready yet')
         elif self.combobox.currentText() == 'SurroundMap':                                          
             print('Not ready yet')
+        elif self.combobox.currentText() == 'Kiani_gaze':                                          
+            from tasks import KianiGaze_NPX_Analysis as kGaze_NPX; 
+            kGaze_NPX.main(self); 
         else:
             print('Task was not selected'); 
 

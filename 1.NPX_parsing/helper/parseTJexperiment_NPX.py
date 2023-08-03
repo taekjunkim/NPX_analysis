@@ -74,7 +74,8 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     experiment['chpos_sua'] = chpos_all['sua'];        
     experiment['chpos_mua'] = chpos_all['mua'];
     experiment['prevTime'] = prevTime;                        
-    experiment['postTime'] = postTime;                
+    experiment['postTime'] = postTime;          
+    experiment['correct'] = [];                    
 
     counter = 0; 
     ### points where individual trials begin
@@ -93,6 +94,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
         stimStructs[i]['pdOn'] = []; 
         stimStructs[i]['pdOff'] = []; 
         stimStructs[i]['neurons'] = [];        
+        stimStructs[i]['trial_num'] = [];                
         for j in np.arange(numNeurons):
             stimStructs[i]['neurons'].append(dict());
 
@@ -234,8 +236,11 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             inst = stimStructs[sIndex]['numInstances'];
             inst = inst - 1; # for zero-based indexing in python (Matlab doesn't need this);
             stimStructs[sIndex]['timeOn'].append(stimOnTime);               
-            stimStructs[sIndex]['timeOff'].append(stimOffTime);                               
-            
+            stimStructs[sIndex]['timeOff'].append(stimOffTime);               
+
+            ## add trial num                
+            stimStructs[sIndex]['trial_num'].append(i);                           
+
             ## now find the pdiode events associated with
             pdOnsAfter = np.where(pdOnTS > stimOnTime)[0];
             if len(pdOnsAfter)==0:
@@ -275,6 +280,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                     trialCode = parseParams['breakFixCode'];
                     continue;
             elif code == parseParams['correctCode']: # end of trial
+                experiment['correct'].append(i);                                     
                 if markervals[codeIndex+1] != parseParams['startITICode']:
                     print('Missing startITI after '+str(markervals[codeIndex+1])+
                           ' at '+str(markerts[codeIndex+1])+' at index '+
@@ -285,7 +291,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 else:
                     trialCode = parseParams['correctCode'];
                     continue;
-            elif code != parseParams['stimIDCode']:
+            elif code != parseParams['stimIDCode']:                
                 print('Found '+str(stimCode)+' as a stim ID code at stim time '+
                       str(markerts[codeIndex]));
                 print('continuing from next start_iti');                        
@@ -297,7 +303,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                                     
     ### add stimStructs to experiment output, then return
     experiment['stimStructs'] = stimStructs;                        
-    experiment['errors'] = error_indices;
+    experiment['errors'] = error_indices; 
     
     return experiment;
 
@@ -479,7 +485,10 @@ def get_event_ts(bin_filename, markervals_str):
             markerts[stim_ons] = pdOnTS - 0.001;   # 1 ms earlier than pdOnTS  
         else:
             print('number of pdONs is not matched with "sample_on"'); 
-            markerts[stim_ons] = pdOnTS[:len(stim_ons)] - 0.001; 
+            if len(stim_ons)<len(pdOnTS):
+                markerts[stim_ons] = pdOnTS[:len(stim_ons)] - 0.001; 
+            else:
+                markerts[stim_ons[:len(pdOnTS)]] = pdOnTS - 0.001; 
 
     # timestamps in seconds
     return markerts, pdOnTS, pdOffTS

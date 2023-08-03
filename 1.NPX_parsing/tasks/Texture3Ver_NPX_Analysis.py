@@ -103,8 +103,8 @@ def main(app):
     dist_Mtx = np.zeros((nNeurons,nNeurons));
     r2er_Mtx = np.ones((nNeurons,nNeurons));
     r2_Mtx = np.ones((nNeurons,nNeurons));
-    for n1 in range(nNeurons-1):
-        for n2 in range(n1+1,nNeurons): 
+    for n1 in np.arange(nNeurons-1):
+        for n2 in np.arange(n1+1,nNeurons): 
             r2er, r2 = er.r2er_n2n(respMtx[n1,:,:]**0.5,respMtx[n2,:,:]**0.5); 
             if r2er < 0:
                 r2er = 0; 
@@ -131,6 +131,8 @@ def main(app):
     plt.figure(figsize=(10,6)); 
     plt.subplot(2,3,1); 
     rMtx = np.corrcoef(mResp[:nCond,depth_order],rowvar=False); 
+    rMtx[np.isnan(rMtx)] = 0; 
+
     neg_r = np.where(rMtx<0); 
     plt.imshow(rMtx,origin='lower'); 
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')
@@ -143,8 +145,8 @@ def main(app):
         x_data[i] = np.nan; 
         y_data = rMtx[:,i]; 
         y_data[i] = np.nan; 
-        x_input = x_data[~np.isnan(x_data)]; 
-        y_input = y_data[~np.isnan(y_data)]; 
+        x_input = x_data[(~np.isnan(x_data) & ~np.isnan(y_data))]; 
+        y_input = y_data[(~np.isnan(x_data) & ~np.isnan(y_data))]; 
 
         x_input2 = sm.add_constant(x_input)
         regr = sm.OLS(y_input,x_input2).fit(); 
@@ -173,8 +175,8 @@ def main(app):
         y_data = r_er_Mtx[:,i]; 
         y_data[i] = np.nan;         
 
-        x_input = x_data[~np.isnan(x_data)]; 
-        y_input = y_data[~np.isnan(y_data)]; 
+        x_input = x_data[(~np.isnan(x_data) & ~np.isnan(y_data))]; 
+        y_input = y_data[(~np.isnan(x_data) & ~np.isnan(y_data))]; 
 
         x_input2 = sm.add_constant(x_input)
         regr = sm.OLS(y_input,x_input2).fit(); 
@@ -190,6 +192,8 @@ def main(app):
 
     plt.subplot(2,3,3); 
     r_Mtx = r2_Mtx**0.5; 
+    r_Mtx[np.isnan(r_Mtx)] = 0; 
+
     r_Mtx[neg_r[0],neg_r[1]] = -1*r_Mtx[neg_r[0],neg_r[1]]; 
     plt.imshow(r_Mtx,origin='lower'); 
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')
@@ -203,10 +207,10 @@ def main(app):
         r_Mtx2[i,i] = np.nan; 
     x_data = dist_Mtx2.ravel(); 
     y_data = r_Mtx2.ravel();     
-    x_inputA = x_data[~np.isnan(x_data)]; 
-    y_inputA = y_data[~np.isnan(y_data)]; 
-    x_inputB = x_data[(~np.isnan(x_data)) & (x_data<1500)]; 
-    y_inputB = y_data[(~np.isnan(y_data)) & (x_data<1500)]; 
+    x_inputA = x_data[(~np.isnan(x_data) & ~np.isnan(y_data))]; 
+    y_inputA = y_data[(~np.isnan(x_data) & ~np.isnan(y_data))]; 
+    x_inputB = x_data[(~np.isnan(x_data) & ~np.isnan(y_data)) & (x_data<1500)]; 
+    y_inputB = y_data[(~np.isnan(x_data) & ~np.isnan(y_data)) & (x_data<1500)]; 
 
     x_inputA2 = sm.add_constant(x_inputA)
     x_inputB2 = sm.add_constant(x_inputB)    
