@@ -162,6 +162,8 @@ def main(app):
 
     plt.subplot(2,3,2); 
     r_er_Mtx = r2er_Mtx**0.5; 
+    r_er_Mtx[np.isnan(r_er_Mtx)] = 0; 
+
     r_er_Mtx[neg_r[0],neg_r[1]] = -1*r_er_Mtx[neg_r[0],neg_r[1]]; 
     plt.imshow(r_er_Mtx,origin='lower'); 
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')

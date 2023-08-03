@@ -103,7 +103,7 @@ def main(app):
                    np.nanmean(mResp[np.arange(2,250,5),n]),
                    np.nanmean(mResp[np.arange(3,250,5),n]),
                    np.nanmean(mResp[np.arange(4,250,5),n])]; 
-        bestPos = np.where(posResp==np.max(posResp))[0]; 
+        bestPos = np.min(np.where(posResp==np.max(posResp))[0]); 
         respMtx[n,:10,:50] = respMtxAll[n][:,np.arange(bestPos,250,5)]; 
     """
     # consider all positions together
@@ -175,6 +175,8 @@ def main(app):
 
     plt.subplot(2,3,2); 
     r_er_Mtx = r2er_Mtx**0.5; 
+    r_er_Mtx[np.isnan(r_er_Mtx)] = 0; 
+
     r_er_Mtx[neg_r[0],neg_r[1]] = -1*r_er_Mtx[neg_r[0],neg_r[1]]; 
     plt.imshow(r_er_Mtx,origin='lower'); 
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')
