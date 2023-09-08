@@ -389,4 +389,55 @@ f.close();
 """
        
 #%%
+"""
+filename = '/Volumes/TK_exHDD3/Anesthetized_V2_Jul2023/P08/P08_M140_combined_03-04-09-10/processed/M140_230718_PosInvariance_RE_NPX_g8_t1.json.gz'; 
 
+f = gzip.GzipFile(filename,'r'); 
+Data = json.loads(f.read().decode('utf-8')); 
+f.close(); 
+
+mResp = np.array(Data['mResp'])
+
+matrixA = []; 
+matrixSig = []; 
+for r in range(np.shape(mResp)[1]):
+    numerator = 0; 
+    denominator = 0; 
+    for i in range(4):
+        respA = mResp[np.arange(i,250,5),r] - np.mean(mResp[np.arange(i,250,5),r]); 
+        for j in range(i+1,5):
+            respB = mResp[np.arange(j,250,5),r] - np.mean(mResp[np.arange(j,250,5),r]);      
+            numerator += np.cov(respA,respB)[0,1]; 
+            denominator += np.std(respA)*np.std(respB); 
+    matrixA.append(numerator/denominator); 
+
+    simul = []; 
+    for s in range(100):
+        numerator = 0; 
+        denominator = 0; 
+        for i in range(4):
+            respA = mResp[np.arange(i,250,5),r] - np.mean(mResp[np.arange(i,250,5),r]); 
+            np.random.shuffle(respA); 
+            for j in range(i+1,5):
+                respB = mResp[np.arange(j,250,5),r] - np.mean(mResp[np.arange(j,250,5),r]);      
+                np.random.shuffle(respB); 
+                numerator += np.cov(respA,respB)[0,1]; 
+                denominator += np.std(respA)*np.std(respB); 
+        simul.append(numerator/denominator); 
+    simul = np.array(simul); 
+    bigger_than_random = len(np.where(simul > matrixA[-1])[0]); 
+    if bigger_than_random < 5:
+        matrixSig.append(1); 
+    else:
+        matrixSig.append(0); 
+
+    print(f'neuron: {r} was done');         
+
+matrixA = np.array(matrixA); 
+matrixSig = np.array(matrixSig); 
+
+signi = np.where(matrixSig==1)[0]; 
+plt.hist(matrixA,np.arange(-1,1.1,0.05))
+plt.hist(matrixA[signi],np.arange(-1,1.1,0.05)); 
+
+"""

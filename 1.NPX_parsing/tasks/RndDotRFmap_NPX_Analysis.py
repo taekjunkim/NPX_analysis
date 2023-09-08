@@ -96,6 +96,7 @@ def main(app):
             psth_mtx[i,:,j] = makeSDF.getSDF(StimResp[i]['neurons'][j]['spkMtx'],1000);
             mResp[i,j] = np.mean(StimResp[i]['neurons'][j]['meanSDF'][TimeOfInterest])
 
+    experiment['mResp'] = mResp; 
 
     #%%
     x = np.arange(xRange[0],xRange[1]+1,1);
@@ -192,7 +193,7 @@ def main(app):
             data_fitted0 = twoD_Gaussian(posData, *popt);     
             fit_r = np.corrcoef(data_fitted0, RFmap_norm.ravel())[0,1]; 
 
-            if fit_r>np.sqrt(0.36):
+            if fit_r>np.sqrt(0.81):
                 data_fitted = twoD_Gaussian(posData2, *popt); 
 
                 if unit_id in experiment['id_sua']:
