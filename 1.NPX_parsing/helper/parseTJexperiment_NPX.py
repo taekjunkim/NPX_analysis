@@ -573,10 +573,12 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
 
         for i in np.arange(df.shape[0]):
             spk_now = np.where(sc==df.loc[i,'cluster_id'])[0]; 
-            depths_now = np.mean(spikeDepths[spk_now]); 
+            depths_now = np.nanmean(spikeDepths[spk_now]); 
+            if ~np.isnan(depths_now):
+                depths_now = round(depths_now); 
 
             df.loc[i,'xc'] = np.nan; 
-            df.loc[i,'yc'] = round(depths_now); 
+            df.loc[i,'yc'] = depths_now; 
 
     
     ### check inter-spike interval
