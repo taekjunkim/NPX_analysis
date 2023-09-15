@@ -351,13 +351,13 @@ def main(app):
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
-    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
-    #np.savez_compressed(name_to_save, **experiment); 
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    np.savez_compressed(name_to_save, **experiment); 
 
-    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
-    f = gzip.GzipFile(name_to_save,'w');    
-    f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
-    f.close(); 
+    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
+    #f = gzip.GzipFile(name_to_save,'w');    
+    #f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
+    #f.close(); 
     print('processed file was saved'); 
 
 
@@ -419,3 +419,59 @@ def twoD_Gaussian(posData, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
     return g.ravel()
 
 
+#%%
+"""
+depth_min = np.min([np.min(data['chpos_sua'][:,1]),np.min(data['chpos_mua'][:,1])]); 
+depth_max = np.max([np.max(data['chpos_sua'][:,1]),np.max(data['chpos_mua'][:,1])]);  
+cmap = plt.cm.viridis; 
+
+plt.figure(figsize=(9, 3))
+ax1 = plt.subplot(1,3,1); 
+ax1.set_xlim(xRange[0]-0.5,xRange[1]+0.5);
+ax1.set_ylim(yRange[0]-0.5,yRange[1]+0.5);    
+ax1.set_title('RF fitted');    
+ax1.set_xlabel('RF horizontal (deg)'); 
+ax1.set_ylabel('RF vertical (deg)')
+ax1.grid()
+ax2 = plt.subplot(1,3,2); 
+ax2.set_xlim(xRange[0]-0.5,xRange[1]+0.5);
+ax2.set_xlabel('RF horizontal (deg)'); 
+ax2.set_ylabel('Distance from the tip (micrometer)')
+ax2.spines[['right', 'top']].set_visible(False)
+ax3 = plt.subplot(1,3,3);  
+ax3.set_xlim(yRange[0]-0.5,yRange[1]+0.5);    
+ax3.set_xlabel('RF vertical (deg)'); 
+ax3.set_ylabel('Distance from the tip (micrometer)')
+ax3.spines[['right', 'top']].set_visible(False)
+
+
+for i in range(len(data['neuronid'])):
+
+    if data['RF_fit'][i]['fit_r']>0.9:
+        popt = [data['RF_fit'][i]['amplitude'],
+                data['RF_fit'][i]['x0'], 
+                data['RF_fit'][i]['y0'],
+                data['RF_fit'][i]['sigma_x'],
+                data['RF_fit'][i]['sigma_y'],
+                data['RF_fit'][i]['theta'],
+                data['RF_fit'][i]['offset']]; 
+        data_fitted = twoD_Gaussian(posData2, *popt);                 
+        
+        unit_id = data['neuronid'][i]; 
+        if unit_id in data['id_sua']:
+            sua_idx = np.where(data['id_sua']==unit_id)[0][0]; 
+            ch_xc = data['chpos_sua'][sua_idx][0]; 
+            ch_yc = data['chpos_sua'][sua_idx][1]; 
+        elif unit_id in data['id_mua']:                    
+            mua_idx = np.where(data['id_mua']==unit_id)[0][0];                     
+            ch_xc = data['chpos_mua'][mua_idx][0]; 
+            ch_yc = data['chpos_mua'][mua_idx][1]; 
+        dot_color = cmap((ch_yc-depth_min)/(depth_max-depth_min)); 
+
+        ax1.contour(x2, y2, (data_fitted.reshape(np.shape(x2))-popt[-1])/popt[0], 
+                    [0.5], colors = [dot_color]);
+        ax2.plot(popt[1], ch_yc, 'o', c = dot_color);  
+        ax3.plot(popt[2], ch_yc, 'o', c = dot_color);  
+plt.tight_layout()
+plt.savefig('/Volumes/TK_exHDD1/NPX/V4_clutter/x230518_combined_g0/processed/RFmap_x230518.pdf')
+"""

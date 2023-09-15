@@ -480,6 +480,7 @@ def get_event_ts(bin_filename, markervals_str):
     else:
         markerts = np.zeros(len(markervals_str)); 
         stim_ons = np.where(markervals_str=='sample_on')[0]; 
+        #stim_ons = np.where(markervals_str=='test_on')[0];         
         if len(stim_ons) == len(pdOnTS):
             print('number of pdONs is matched with "sample_on"');             
             markerts[stim_ons] = pdOnTS - 0.001;   # 1 ms earlier than pdOnTS  

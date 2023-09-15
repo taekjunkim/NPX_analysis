@@ -538,6 +538,12 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
                 syncON = syncONs[p]; 
                 break; 
 
+    st = np.load(imec_dataFolder+'spike_times.npy');
+    sc = np.load(imec_dataFolder+'spike_clusters.npy');
+    
+    st = (st.astype(dtype='int64')-syncON)/imSampRate;
+
+
     if man_sorted==1:
         df = pd.read_csv(imec_dataFolder+'cluster_info.tsv', sep='\t');
         ch_map = np.load(imec_dataFolder+'channel_map.npy');  
@@ -548,19 +554,29 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
             df.loc[i,'yc'] = ch_pos[id_chmap,1]; 
     else:
         df = pd.read_csv(imec_dataFolder+'cluster_KSLabel.tsv', sep='\t');
-        templates = np.load(imec_dataFolder+'templates.npy');  
-        ch_pos = np.load(imec_dataFolder+'channel_positions.npy');  
-        for i in np.arange(df.shape[0]):
-            wf = templates[i,:,:]; 
-            max_min_wvf=np.max(wf,0)-np.min(wf,0); 
-            id_chmap = max_min_wvf.argmax(); 
-            df.loc[i,'xc'] = ch_pos[id_chmap,0]; 
-            df.loc[i,'yc'] = ch_pos[id_chmap,1]; 
+        spikeTemps = np.load(imec_dataFolder+'spike_templates.npy'); 
+        spikeTempAmps = np.load(imec_dataFolder+'amplitudes.npy'); 
+        pcFeat = np.load(imec_dataFolder+'pc_features.npy');     
+        pcFeat = np.squeeze(pcFeat[:,0,:]);    # take first PC only
+        pcFeat[pcFeat<0] = 0;    # some entries are negative, but we don't really want to push the CoM away from there.
 
-    st = np.load(imec_dataFolder+'spike_times.npy');
-    sc = np.load(imec_dataFolder+'spike_clusters.npy');
-    
-    st = (st.astype(dtype='int64')-syncON)/imSampRate;
+        pcFeatInd = np.load(imec_dataFolder+'pc_feature_ind.npy');       
+        ch_pos = np.load(imec_dataFolder+'channel_positions.npy');  
+        ycoords = ch_pos[:,1]; 
+
+        spikeFeatInd = pcFeatInd[spikeTemps,:];     
+        spikeFeatYcoords = np.squeeze(ycoords[spikeFeatInd]);  # 2D matrix of size #spikes x 12 
+        spikeDepths = np.sum(np.multiply(spikeFeatYcoords,pcFeat**2),axis=1)/np.sum(pcFeat**2,axis=1);  
+
+        for i in np.arange(df.shape[0]):
+            spk_now = np.where(sc==df.loc[i,'cluster_id'])[0]; 
+            depths_now = np.nanmean(spikeDepths[spk_now]); 
+            if ~np.isnan(depths_now):
+                depths_now = round(depths_now); 
+
+            df.loc[i,'xc'] = np.nan; 
+            df.loc[i,'yc'] = depths_now; 
+
     
     ### check inter-spike interval
     ### np.diff, 5% rule

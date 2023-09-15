@@ -107,7 +107,7 @@ def main(app):
     LFP_mtxC2 = -np.diff(LFP_mtxC, n=2, axis=0)/spacing_mm**2;     
 
     level_max = np.max([np.abs(LFP_mtxA), np.abs(LFP_mtxB), np.abs(LFP_mtxC)]); 
-    level_max2 = np.max([np.abs(LFP_mtxA2), np.abs(LFP_mtxB2), np.abs(LFP_mtxC2)]); 
+    level_max2 = np.max([np.abs(LFP_mtxA2), np.abs(LFP_mtxB2), np.abs(LFP_mtxC2)])*0.6; 
 
     ### draw figures; 
     plt.figure(figsize=(12,7)); 
@@ -115,9 +115,9 @@ def main(app):
     plt.subplot(2,3,1); 
     plt.imshow(LFP_mtxA, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
     for i in np.arange(0,96,5):
-        plt.plot(LFP_mtxA[i,:]*4/level_max + i,'k'); 
+        plt.plot(LFP_mtxA[i,:]*8/level_max + i,'k'); 
     plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(0,96,5), labels=np.arange(20,3860,200));     
+    plt.yticks(np.arange(-1,96,5), labels=np.arange(20,3860,200));     
     plt.ylim([0, 95]); 
     plt.title('odd rows. Raw LFP'); 
     plt.xlabel('Time from stimulus onset (ms)')
@@ -126,9 +126,9 @@ def main(app):
     plt.subplot(2,3,2); 
     plt.imshow(LFP_mtxB, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
     for i in np.arange(0,96,5):
-        plt.plot(LFP_mtxB[i,:]*4/level_max + i,'k'); 
+        plt.plot(LFP_mtxB[i,:]*8/level_max + i,'k'); 
     plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(0,96,5), labels=np.arange(40,3860,200));     
+    plt.yticks(np.arange(-1,96,5), labels=np.arange(20,3860,200));     
     plt.ylim([0, 95]); 
     plt.title('even rows. Raw LFP'); 
     plt.xlabel('Time from stimulus onset (ms)')
@@ -137,9 +137,9 @@ def main(app):
     plt.subplot(2,3,3); 
     plt.imshow(LFP_mtxC, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
     for i in np.arange(0,96,5):
-        plt.plot(LFP_mtxC[i,:]*4/level_max + i,'k'); 
+        plt.plot(LFP_mtxC[i,:]*8/level_max + i,'k'); 
     plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(0,96,5), labels=np.arange(30,3860,200));     
+    plt.yticks(np.arange(-1,96,5), labels=np.arange(20,3860,200));     
     plt.ylim([0, 95]); 
     plt.title('average. Raw LFP');     
     plt.xlabel('Time from stimulus onset (ms)')    
@@ -149,9 +149,9 @@ def main(app):
     plt.subplot(2,3,4); 
     plt.imshow(LFP_mtxA2, aspect='auto', origin='lower', cmap='jet', vmin = -level_max2, vmax = level_max2); 
     for i in np.arange(0,95,5):
-        plt.plot(LFP_mtxA2[i,:]*4/level_max2 + i,'k'); 
+        plt.plot(LFP_mtxA2[i,:]*8/level_max2 + i,'k'); 
     plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(0,96,5), labels=np.arange(20,3860,200));     
+    plt.yticks(np.arange(-1,96,5), labels=np.arange(20,3860,200));     
     plt.ylim([0, 95]); 
     plt.title('odd rows. CSD'); 
     plt.xlabel('Time from stimulus onset (ms)')
@@ -160,9 +160,9 @@ def main(app):
     plt.subplot(2,3,5); 
     plt.imshow(LFP_mtxB2, aspect='auto', origin='lower', cmap='jet', vmin = -level_max2, vmax = level_max2); 
     for i in np.arange(0,95,5):
-        plt.plot(LFP_mtxB2[i,:]*4/level_max2 + i,'k'); 
+        plt.plot(LFP_mtxB2[i,:]*8/level_max2 + i,'k'); 
     plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(0,96,5), labels=np.arange(40,3860,200));     
+    plt.yticks(np.arange(-1,96,5), labels=np.arange(20,3860,200));     
     plt.ylim([0, 95]); 
     plt.title('even rows. CSD');     
     plt.xlabel('Time from stimulus onset (ms)')    
@@ -171,9 +171,9 @@ def main(app):
     plt.subplot(2,3,6); 
     plt.imshow(LFP_mtxC2, aspect='auto', origin='lower', cmap='jet', vmin = -level_max2, vmax = level_max2); 
     for i in np.arange(0,95,5):
-        plt.plot(LFP_mtxC2[i,:]*4/level_max2 + i,'k'); 
+        plt.plot(LFP_mtxC2[i,:]*8/level_max2 + i,'k'); 
     plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(0,96,5), labels=np.arange(30,3860,200));     
+    plt.yticks(np.arange(-1,96,5), labels=np.arange(20,3860,200));     
     plt.ylim([0, 95]); 
     plt.title('average. CSD');     
     plt.xlabel('Time from stimulus onset (ms)')    
@@ -188,13 +188,15 @@ def main(app):
     experiment['NPX_chpos'] = NPX_chpos; 
     experiment['LFP_mtx'] = LFP_mtx;    
 
-    """
+
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
-    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
-    #np.savez_compressed(name_to_save, **experiment); 
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    np.savez_compressed(name_to_save, **experiment); 
 
+    print('processed file was saved');     
+    """
     name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
     f = gzip.GzipFile(name_to_save,'w');    
     f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
@@ -257,3 +259,36 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
+
+#%%
+"""
+level_max = np.max([np.abs(LFP_mtxA), np.abs(LFP_mtxB), np.abs(LFP_mtxC)])*0.8; 
+level_max2 = np.max([np.abs(LFP_mtxA2), np.abs(LFP_mtxB2), np.abs(LFP_mtxC2)])*0.6; 
+
+
+plt.figure(figsize=(6,3))
+plt.subplot(1,2,1); 
+plt.imshow(LFP_mtxC, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
+for i in np.arange(0,96,5):
+    plt.plot(LFP_mtxC[i,:]*10/level_max + i,'k'); 
+plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
+plt.yticks(np.arange(-1,96,5), labels=np.arange(0,3860,200));     
+plt.ylim([0, 88]); 
+plt.title('average. Raw LFP');     
+plt.xlabel('Time from stimulus onset (ms)')    
+plt.ylabel('Distance from NPX tip (micrometer)')    
+
+plt.subplot(1,2,2)
+plt.imshow(LFP_mtxC2, aspect='auto', origin='lower', cmap='jet', vmin = -level_max2, vmax = level_max2); 
+for i in np.arange(0,95,5):
+    plt.plot(LFP_mtxC2[i,:]*8/level_max2 + i,'k'); 
+plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
+plt.yticks(np.arange(-1,96,5), labels=np.arange(0,3860,200));     
+plt.ylim([0, 88]); 
+plt.title('average. CSD');     
+plt.xlabel('Time from stimulus onset (ms)')    
+plt.ylabel('Distance from NPX tip (micrometer)')    
+
+plt.tight_layout(); 
+plt.savefig(file_dir+'CSD_example.pdf')
+"""
