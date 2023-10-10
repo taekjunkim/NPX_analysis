@@ -98,13 +98,13 @@ def main(app):
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
-    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
-    #np.savez_compressed(name_to_save, **experiment); 
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    np.savez_compressed(name_to_save, **experiment); 
 
-    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
-    f = gzip.GzipFile(name_to_save,'w');    
-    f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
-    f.close(); 
+    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
+    #f = gzip.GzipFile(name_to_save,'w');    
+    #f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
+    #f.close(); 
     print('processed file was saved'); 
 
     #%% Stimulus conditions

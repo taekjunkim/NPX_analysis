@@ -63,6 +63,7 @@ class MainWindow(QMainWindow):
         self.combobox.addItems(['RndDotRFmap']);         
         self.combobox.addItems(['ClutterStim']);          
         self.combobox.addItems(['SaliencyPS']);          
+        self.combobox.addItems(['ShapeTexture']);                  
         self.combobox.addItems(['PositionInvariance']);  
         self.combobox.addItems(['Texture3Ver']);                               
         self.combobox.addItems(['StimDuration']);                                         
@@ -170,6 +171,9 @@ class MainWindow(QMainWindow):
         elif self.combobox.currentText() == 'ClutterStim':      
             from tasks import ClutterStim_NPX_Analysis as CS_NPX; 
             CS_NPX.main(self); 
+        elif self.combobox.currentText() == 'ShapeTexture':      
+            from tasks import ShapeTexture_NPX_Analysis as ST_NPX; 
+            ST_NPX.main(self);         
         elif self.combobox.currentText() == 'SaliencyPS':      
             from tasks import SaliencyPSstat_NPX_Analysis as SP_NPX; 
             SP_NPX.main(self); 
