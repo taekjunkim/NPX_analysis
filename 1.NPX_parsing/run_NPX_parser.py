@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         self.combobox.addItems(['ExtractWaveform']);         
         self.combobox.addItems(['KS_DriftMap']);                 
         self.combobox.addItems(['CSD']); 
+        self.combobox.addItems(['LFP_power']);         
         self.combobox.addItems(['DriftingGrating']); 
         self.combobox.addItems(['RndDotRFmap']);         
         self.combobox.addItems(['ClutterStim']);          
@@ -156,6 +157,9 @@ class MainWindow(QMainWindow):
         if self.combobox.currentText() == 'CSD':
             from tasks import CSD_NPX_Analysis as CSD_NPX; 
             CSD_NPX.main(self); 
+        if self.combobox.currentText() == 'LFP_power':
+            from tasks import LFP_power_NPX_Analysis as LFP_p_NPX; 
+            LFP_p_NPX.main(self); 
         if self.combobox.currentText() == 'ExtractWaveform':
             from tasks import ExtractWaveform_NPX_Analysis as EW_NPX; 
             EW_NPX.main(self); 
