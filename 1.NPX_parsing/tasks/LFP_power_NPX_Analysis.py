@@ -11,7 +11,8 @@ ClutterStim_NPX_Analysis.py
 import matplotlib.pyplot as plt;
 import scipy.optimize as opt;
 from scipy.ndimage import gaussian_filter1d
-from scipy.signal import butter, sosfilt, spectrogram, welch
+from scipy.signal import butter, sosfilt, periodogram
+from scipy import stats; 
 
 #import sys;
 #sys.path.append('./helper'); 
@@ -74,79 +75,83 @@ def main(app):
     LFP_mtx[191,:,:] = (LFP_mtx[190,:,:]+LFP_mtx[192,:,:])/2; 
     LFP_mtx1 = np.mean(LFP_mtx,axis=2).squeeze();     
 
+    ###############
+    ### Spectra ###
+    ###############
+    freq = np.arange(0,151,2);     
+    LFP_mtx2 = np.empty((384,len(freq),len(pdOnTS)));    # freq: np.arange(0,151,5); 
+    for ch in np.arange(384):
+        for i in range(len(pdOnTS)):
+            sigNow = LFP_mtx[ch,:,i].squeeze(); 
+            f,pxx = periodogram(sigNow,fs=imSampRate); 
+            LFP_mtx2[ch,:,i] = pxx[:len(freq)]; 
+        print(f'ch#{ch} was done');     
+    LFP_mtx2 = np.mean(LFP_mtx2, axis=2);     
+  
+    ### Remove bad channels from LFP_mtx1, LFP_mtx2; 
+    bad_ch = []; 
+
+    # based on flat LFP
+    for i in np.arange(384):
+        if np.max(np.abs(LFP_mtx1[i,:]))<np.max(np.abs(LFP_mtx1))*0.1:
+            bad_ch.append(i); 
+        
+    # based on spectra
+    for i in np.arange(384):
+        fpos1 = np.where((freq>30) & (freq<50))[0]; 
+        fpos2 = np.where((freq>50) & (freq<70))[0]; 
+        if np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i,fpos1])*2:
+            bad_ch.append(i); 
+        if (i>0) and (i<383):
+            if ((np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i-1,fpos2])*1.5) and 
+                (np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i+1,fpos2]))): 
+                bad_ch.append(i); 
+            if ((np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i-1,fpos2])) and 
+                (np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i+1,fpos2])*1.5)): 
+                bad_ch.append(i); 
+    
+    bad_ch = np.unique(np.array(bad_ch)); 
+
+    LFP_mtx1[bad_ch,:] = np.nan; 
+    LFP_mtx2[bad_ch,:] = np.nan; 
+
+    # interpolate LFP_mtx1
+    for i in np.arange(np.shape(LFP_mtx1)[1]):
+        sig = LFP_mtx1[:,i]; 
+        xp = np.where(np.isnan(sig)==0)[0]
+        fp = sig[xp]
+        x  = np.arange(xp[0],xp[-1]); 
+        LFP_mtx1[x,i] = np.interp(x, xp, fp)
+
+    # interpolate LFP_mtx2
+    for i in np.arange(np.shape(LFP_mtx2)[1]):
+        sig = LFP_mtx2[:,i]; 
+        xp = np.where(np.isnan(sig)==0)[0]
+        fp = sig[xp]
+        x  = np.arange(xp[0],xp[-1]); 
+        LFP_mtx2[x,i] = np.interp(x, xp, fp)
+
+
     ### get_NPX_chpos 
     NPX_chpos = get_NPX_chpos('3B1_staggered'); 
     #NPX_chpos = get_NPX_chpos('3B2_aligned'); 
 
-    ###########
-    ### CSD ###
-    ###########
+    ### divide LFP_mtx into 2 groups based on ycoords
+    LFP_mtx2A = LFP_mtx2[np.where(NPX_chpos[:,0]>=43)[0],:];  
+    LFP_mtx2B = LFP_mtx2[np.where(NPX_chpos[:,0]<=27)[0],:];  
 
+    ### For CSD ###
     ### divide LFP_mtx into 2 groups based on ycoords
     LFP_mtx1A = LFP_mtx1[np.where(NPX_chpos[:,0]>=43)[0],:];  
-    LFP_mtx1B = LFP_mtx1[np.where(NPX_chpos[:,0]<=27)[0],:];  
-    LFP_mtx1C = (LFP_mtx1A + LFP_mtx1B)/2; 
-
-    ### denoise LFP_mtx with gaussian_filter
-    LFP_mtx1C = gaussian_filter1d(LFP_mtx1C, sigma=5, axis=0, mode='reflect'); 
-
-    ### compute CSD. negative of the 2nd spatial derivative
-    spacing_mm = 0.02; 
-    LFP_mtx1C2 = -np.diff(LFP_mtx1C, n=2, axis=0)/spacing_mm**2;     
-
-    level_max = np.max([np.abs(LFP_mtx1C)]); 
-    level_max2 = np.max([np.abs(LFP_mtx1C2)])*0.6; 
+    LFP_mtx1B = LFP_mtx1[np.where(NPX_chpos[:,0]<=27)[0],:];          
 
     ### draw figures; 
-    plt.figure(figsize=(6,6)); 
-
-    plt.subplot(2,2,1); 
-    plt.imshow(LFP_mtx1C, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
-    for i in np.arange(0,192,10):
-        plt.plot(LFP_mtx1C[i,:]*8/level_max + i,'k'); 
-    plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
-    plt.ylim([0, 191]); 
-    plt.title('average. Raw LFP');     
-    plt.xlabel('Time from stimulus onset (ms)')    
-    plt.ylabel('Distance from NPX tip (micrometer)')    
-
-    plt.subplot(2,2,3); 
-    plt.imshow(LFP_mtx1C2, aspect='auto', origin='lower', cmap='jet', vmin = -level_max2, vmax = level_max2); 
-    for i in np.arange(0,190,10):
-        plt.plot(LFP_mtx1C2[i,:]*8/level_max2 + i,'k'); 
-    plt.xticks(np.arange(0,1500,250), labels=np.arange(-100,500,100)); 
-    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
-    plt.ylim([0, 190]); 
-    plt.title('average. CSD');     
-    plt.xlabel('Time from stimulus onset (ms)')    
-    plt.ylabel('Distance from NPX tip (micrometer)')    
-
-    ###############
-    ### Spectra ###
-    ###############
-    LFP_mtx2 = np.empty((384,31,len(pdOnTS)));    # freq: np.arange(0,151,5); 
-    for ch in np.arange(384):
-        for i in range(len(pdOnTS)):
-            sigNow = LFP_mtx[ch,:,i].squeeze(); 
-            f,pxx = welch(sigNow,fs=imSampRate,nperseg=500); 
-            LFP_mtx2[ch,:,i] = pxx[:31]; 
-        print(f'ch#{ch} was done'); 
-
-
-    LFP_mtx2A = LFP_mtx2[np.where(NPX_chpos[:,0]>=43)[0],:,:];  
-    LFP_mtx2B = LFP_mtx2[np.where(NPX_chpos[:,0]<=27)[0],:,:];  
-    LFP_mtx2C = (LFP_mtx2A + LFP_mtx2B)/2; 
-
-    plt.subplot(2,2,2); 
-    plt.imshow(np.mean(LFP_mtx2C,axis=2),aspect='auto',origin='lower')
-    plt.xticks(np.arange(0,31,5),np.arange(0,155,25))
-    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
-    plt.xlabel('Frequency (Hz)');    
-    plt.ylabel('Distance from NPX tip (micrometer)')    
-    plt.title('average. Spectral analysis');         
-
-
+    plt.figure(figsize=(12,6)); 
+    draw_CSD(LFP_mtx1A, colnum=1); 
+    draw_CSD(LFP_mtx1B, colnum=2); 
+    
+    draw_Spectra(LFP_mtx2A, colnum=3); 
+    draw_Spectra(LFP_mtx2B, colnum=4); 
     plt.tight_layout(); 
     plt.show()
 
@@ -156,13 +161,13 @@ def main(app):
     experiment['NPX_chpos'] = NPX_chpos; 
     experiment['LFP_mtx2'] = LFP_mtx2;    
 
-
+    """
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
     name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
     np.savez_compressed(name_to_save, **experiment); 
-
+    """
     print('processed file was saved');     
     """
     name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
@@ -171,6 +176,69 @@ def main(app):
     f.close(); 
     print('processed file was saved'); 
     """
+
+def draw_Spectra(rLFP_mtx, colnum):
+
+    ### denoise LFP_mtx with gaussian_filter
+    rLFP_mtx = gaussian_filter1d(rLFP_mtx, sigma=2, axis=0, mode='reflect'); 
+
+    for fq in np.arange(np.shape(rLFP_mtx)[1]):
+        rLFP_mtx[:,fq] = rLFP_mtx[:,fq]/np.nanmax(rLFP_mtx[:,fq]); 
+
+    plt.subplot(2,4,colnum); 
+    plt.imshow(rLFP_mtx,aspect='auto',origin='lower')
+    plt.xticks(np.arange(0,76,25),np.arange(0,155,50))
+    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
+    plt.xlabel('Frequency (Hz)');    
+    plt.ylabel('Distance from NPX tip (micrometer)')    
+    plt.title('average. Spectral analysis');         
+
+    freq = np.arange(0,151,2);     
+    plt.subplot(2,4,colnum+4); 
+    alpha_beta = np.where((freq>=10) & (freq<=30))[0]; 
+    gamma = np.where((freq>=50) & (freq<=150))[0];    
+    plt.plot(np.mean(rLFP_mtx[:,alpha_beta],axis=1),np.arange(0,192),'b',label='alpha-beta'); 
+    plt.plot(np.mean(rLFP_mtx[:,gamma],axis=1),np.arange(0,192),'r',label='gamma'); 
+    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));    
+    plt.gca().spines[['right', 'top']].set_visible(False); 
+    plt.legend(); 
+    plt.xlabel('Relative power');    
+
+
+def draw_CSD(LFP_mtx, colnum):
+    ### denoise LFP_mtx with gaussian_filter
+    LFP_mtx = gaussian_filter1d(LFP_mtx, sigma=2, axis=0, mode='reflect'); 
+
+    ### compute CSD. negative of the 2nd spatial derivative
+    spacing_mm = 0.02; 
+    LFP_mtx1 = -np.diff(LFP_mtx, n=2, axis=0)/spacing_mm**2;     
+
+    level_max = np.nanmax([np.abs(LFP_mtx)]); 
+    level_max1 = np.nanmax([np.abs(LFP_mtx1)])*0.6; 
+
+
+    plt.subplot(2,4,colnum); 
+    plt.imshow(LFP_mtx, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
+    for i in np.arange(0,192,10):
+        plt.plot(LFP_mtx[i,:]*8/level_max + i,'k'); 
+    plt.xticks(np.arange(0,1251,250), labels=np.arange(-100,401,100)); 
+    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
+    plt.ylim([0, 191]); 
+    plt.title('average. Raw LFP');     
+    plt.xlabel('Time from stimulus onset (ms)')    
+    plt.ylabel('Distance from NPX tip (micrometer)')    
+
+    plt.subplot(2,4,colnum+4); 
+    plt.imshow(LFP_mtx1, aspect='auto', origin='lower', cmap='jet', vmin = -level_max1, vmax = level_max1); 
+    for i in np.arange(0,190,10):
+        plt.plot(LFP_mtx1[i,:]*8/level_max1 + i,'k'); 
+    plt.xticks(np.arange(0,1251,250), labels=np.arange(-100,401,100)); 
+    plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
+    plt.ylim([0, 190]); 
+    plt.title('average. CSD');     
+    plt.xlabel('Time from stimulus onset (ms)')    
+    plt.ylabel('Distance from NPX tip (micrometer)')    
+
 
 
 def get_NPX_chpos(NPX_type='3B1_staggered'):
