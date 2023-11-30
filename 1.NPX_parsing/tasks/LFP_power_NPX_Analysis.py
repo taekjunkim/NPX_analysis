@@ -131,7 +131,6 @@ def main(app):
         x  = np.arange(xp[0],xp[-1]); 
         LFP_mtx2[x,i] = np.interp(x, xp, fp)
 
-
     ### get_NPX_chpos 
     NPX_chpos = get_NPX_chpos('3B1_staggered'); 
     #NPX_chpos = get_NPX_chpos('3B2_aligned'); 
@@ -153,12 +152,18 @@ def main(app):
     draw_Spectra(LFP_mtx2A, colnum=3); 
     draw_Spectra(LFP_mtx2B, colnum=4); 
     plt.tight_layout(); 
+    path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
+    if os.path.exists(path_to_save)==0:
+        os.mkdir(path_to_save); 
+    fig_name = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'pdf';
+    plt.savefig(fig_name); 
     plt.show()
 
     ### save experiment (processed file)
     experiment = dict(); 
     experiment['filename'] = dat_filename; 
     experiment['NPX_chpos'] = NPX_chpos; 
+    experiment['LFP_mtx1'] = LFP_mtx1;    
     experiment['LFP_mtx2'] = LFP_mtx2;    
 
     """
@@ -196,7 +201,7 @@ def draw_Spectra(rLFP_mtx, colnum):
     freq = np.arange(0,151,2);     
     plt.subplot(2,4,colnum+4); 
     alpha_beta = np.where((freq>=10) & (freq<=30))[0]; 
-    gamma = np.where((freq>=50) & (freq<=150))[0];    
+    gamma = np.where((freq>=75) & (freq<=150))[0];    
     plt.plot(np.mean(rLFP_mtx[:,alpha_beta],axis=1),np.arange(0,192),'b',label='alpha-beta'); 
     plt.plot(np.mean(rLFP_mtx[:,gamma],axis=1),np.arange(0,192),'r',label='gamma'); 
     plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));    
