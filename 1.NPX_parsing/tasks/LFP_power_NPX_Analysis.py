@@ -110,6 +110,10 @@ def main(app):
                 (np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i+1,fpos2])*1.5)): 
                 bad_ch.append(i); 
     
+    # based on spectra2: too strong power (outlier)
+    too_strong = list(np.where(stats.zscore(np.nansum(LFP_mtx2,axis=1))>5)[0]); 
+    bad_ch = bad_ch + too_strong; 
+
     bad_ch = np.unique(np.array(bad_ch)); 
 
     LFP_mtx1[bad_ch,:] = np.nan; 
@@ -163,8 +167,11 @@ def main(app):
     experiment = dict(); 
     experiment['filename'] = dat_filename; 
     experiment['NPX_chpos'] = NPX_chpos; 
-    experiment['LFP_mtx1'] = LFP_mtx1;    
-    experiment['LFP_mtx2'] = LFP_mtx2;    
+    experiment['LFP_mtx1_Spectra'] = LFP_mtx1;    
+    experiment['LFP_mtx2_CSD'] = LFP_mtx2;    
+
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    np.savez_compressed(name_to_save, **experiment); 
 
     """
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
@@ -190,18 +197,22 @@ def draw_Spectra(rLFP_mtx, colnum):
     for fq in np.arange(np.shape(rLFP_mtx)[1]):
         rLFP_mtx[:,fq] = rLFP_mtx[:,fq]/np.nanmax(rLFP_mtx[:,fq]); 
 
+    freq = np.arange(0,151,2);     
+    alpha_beta = np.where((freq>=10) & (freq<=30))[0]; 
+    gamma = np.where((freq>=75) & (freq<=150))[0];    
+
     plt.subplot(2,4,colnum); 
     plt.imshow(rLFP_mtx,aspect='auto',origin='lower')
     plt.xticks(np.arange(0,76,25),np.arange(0,155,50))
     plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
+    plt.plot(alpha_beta,193*np.ones(np.shape(alpha_beta)),'bs'); 
+    plt.plot(gamma,193*np.ones(np.shape(gamma)),'rs'); 
     plt.xlabel('Frequency (Hz)');    
     plt.ylabel('Distance from NPX tip (micrometer)')    
     plt.title('average. Spectral analysis');         
 
-    freq = np.arange(0,151,2);     
+
     plt.subplot(2,4,colnum+4); 
-    alpha_beta = np.where((freq>=10) & (freq<=30))[0]; 
-    gamma = np.where((freq>=75) & (freq<=150))[0];    
     plt.plot(np.mean(rLFP_mtx[:,alpha_beta],axis=1),np.arange(0,192),'b',label='alpha-beta'); 
     plt.plot(np.mean(rLFP_mtx[:,gamma],axis=1),np.arange(0,192),'r',label='gamma'); 
     plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));    
