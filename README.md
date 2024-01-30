@@ -1,5 +1,5 @@
 # NPX_analysis
- Python code to analyze neuropixels data collected in Pasupathy Lab
+Python code to analyze neuropixels data collected in Pasupathy Lab
 
 1. NPX_parsing
  - read raw data
