@@ -2,9 +2,9 @@
  Python code to analyze neuropixels data collected in Pasupathy Lab
 
 1. NPX_parsing
-    - read raw data
-    - extract trial information
-    - draw a basic figure
-    - organize data structure for future analysis
+ - read raw data
+ - extract trial information
+ - draw a basic figure
+ - organize data structure for future analysis
 
 2. Add.Analyze
