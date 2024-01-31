@@ -2,9 +2,9 @@
 1. In the terminal, move to this folder
    - For example, "/Users/taekjunkim/Documents/UW_PasupathyLab/NPX_analysis/1.NPX_parsing"
 2. Type 
-'''
+```bash
 python run_NPX_parser.py
-'''
+```
 
 
 ### Pre-processing procedure ###
