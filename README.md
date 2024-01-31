@@ -10,7 +10,7 @@ Python code to analyze neuropixels data collected in Pasupathy Lab
  - organize data structure for future analysis
 <br>
 
-![npx_parser](https://github.com/taekjunkim/NPX_analysis/blob/main/images/NPXparser.png)
+![npx_parser](https://github.com/taekjunkim/NPX_analysis/blob/main/images/NPXparser.png =250x)
 
 
 2. Add.Analyze
