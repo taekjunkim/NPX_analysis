@@ -3,9 +3,9 @@
    - For example, "/Users/taekjunkim/Documents/UW_PasupathyLab/NPX_analysis/1.NPX_parsing"
 2. Type 
 
-```
-python run_NPX_parser.py
-```
+   ```
+   python run_NPX_parser.py
+   ```
 
 
 ### Pre-processing procedure ###
