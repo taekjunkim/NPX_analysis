@@ -125,6 +125,15 @@ class MainWindow(QMainWindow):
 
         for i in range(len(imec_datainfo['ap: fname'])):
         
+            # get nidq_data
+            nidq_name = imec_datainfo['nidq: fname'][i]; 
+            nidq_nFileSamp = imec_datainfo['nidq: nFileSamp'][i]; 
+            nidq_nChan = imec_datainfo['nidq: nChan'][i]; 
+            nidq_syncCH = imec_datainfo['nidq: syncCH'][i]; 
+            nidq_SampRate = imec_datainfo['nidq: SampRate'][i]; 
+            nidq_data = np.memmap(nidq_name, dtype='int16', 
+                                shape=(nidq_nFileSamp, nidq_nChan), offset=0, order='C'); 
+
             # get ap_data
             ap_name = imec_datainfo['ap: fname'][i]; 
             ap_nFileSamp = imec_datainfo['ap: nFileSamp'][i]; 
@@ -141,29 +150,68 @@ class MainWindow(QMainWindow):
             lf_data = np.memmap(lf_name, dtype='int16', 
                                 shape=(lf_nFileSamp, lf_nChan), offset=0, order='C');                                           
 
-            # get_syncON in the first 20 seconds
-            syncCh = 384; 
-            ap_syncONs = np.where(ap_data[:ap_imSampRate*20, syncCh]
-                                    >np.max(ap_data[:ap_imSampRate*20, syncCh])*0.5)[0];    
+            # get_syncON in the first and last 20 seconds
+            nidq_syncONs_A = np.where(
+                nidq_data[:nidq_SampRate*20, nidq_syncCH]
+                > np.max(nidq_data[:nidq_SampRate*20, nidq_syncCH])*0.5
+            )[0];    
+            nidq_syncONs_B = np.where(
+                nidq_data[-nidq_SampRate*20:, nidq_syncCH]
+                > np.max(nidq_data[-nidq_SampRate*20:, nidq_syncCH])*0.5
+            )[0] + nidq_nFileSamp - nidq_SampRate*20;    
             for p in range(10):
-                if ap_syncONs[p+1]-ap_syncONs[p]==1:
-                    ap_syncON = ap_syncONs[p]; 
+                if nidq_syncONs_A[p+10]-nidq_syncONs_A[p]==10:
+                    nidq_syncON_A = nidq_syncONs_A[p]; 
+                    break; 
+            for p in range(10):
+                if nidq_syncONs_B[-p-1]-nidq_syncONs_B[-p-11]==10:
+                    nidq_syncON_B = nidq_syncONs_B[-p-1]; 
                     break; 
 
-            lf_syncONs = np.where(lf_data[:lf_imSampRate*20, syncCh]
-                                    >np.max(lf_data[:lf_imSampRate*20, syncCh])*0.5)[0];    
+            syncCH = 384; 
+            ap_syncONs_A = np.where(ap_data[:ap_imSampRate*20, syncCH]
+                                    >np.max(ap_data[:ap_imSampRate*20, syncCH])*0.5)[0];    
+            ap_syncONs_B = np.where(
+                ap_data[-ap_imSampRate*20:, syncCH]
+                > np.max(ap_data[-ap_imSampRate*20:, syncCH])*0.5
+            )[0] + ap_nFileSamp - ap_imSampRate*20;    
             for p in range(10):
-                if lf_syncONs[p+1]-lf_syncONs[p]==1:
-                    lf_syncON = lf_syncONs[p]; 
-                    break;           
+                if ap_syncONs_A[p+10]-ap_syncONs_A[p]==10:
+                    ap_syncON_A = ap_syncONs_A[p]; 
+                    break; 
+            for p in range(10):
+                if ap_syncONs_B[-p-1]-ap_syncONs_B[-p-11]==10:
+                    ap_syncON_B = ap_syncONs_B[-p-1]; 
+                    break; 
+            
+            lf_syncONs_A = np.where(lf_data[:lf_imSampRate*20, syncCH]
+                                    >np.max(lf_data[:lf_imSampRate*20, syncCH])*0.5)[0];    
+            lf_syncONs_B = np.where(
+                lf_data[-lf_imSampRate*20:, syncCH]
+                > np.max(lf_data[-lf_imSampRate*20:, syncCH])*0.5
+            )[0] + lf_nFileSamp - lf_imSampRate*20;    
+            for p in range(10):
+                if lf_syncONs_A[p+10]-lf_syncONs_A[p]==10:
+                    lf_syncON_A = lf_syncONs_A[p]; 
+                    break; 
+            for p in range(10):
+                if lf_syncONs_B[-p-1]-lf_syncONs_B[-p-11]==10:
+                    lf_syncON_B = lf_syncONs_B[-p-1]; 
+                    break; 
 
-            imec_datainfo['ap: syncON'].append(ap_syncON); 
-            imec_datainfo['lf: syncON'].append(lf_syncON);                                      
+            imec_datainfo['nidq: syncON'].append(nidq_syncON_A); 
+            imec_datainfo['ap: syncON'].append(ap_syncON_A); 
+            imec_datainfo['lf: syncON'].append(lf_syncON_A);                                      
 
+            imec_datainfo['nidq: syncOFF'].append(nidq_syncON_B); 
+            imec_datainfo['ap: syncOFF'].append(ap_syncON_B); 
+            imec_datainfo['lf: syncOFF'].append(lf_syncON_B);                                      
+
+            """
             # write ap_data, lf_data
             chunk = 0; 
             ap_chunk_size = int(np.ceil(ap_nFileSamp/1000)); 
-            lf_chunk_size = int(np.ceil(lf_nFileSamp/1000)); 
+            lf_chunk_size = int(np.ceil(lf_nFileSamp/1000)); nidq_bin = glob.glob(ap_bins[j][:idx_slash[-2]]+'/*nidq.bin')[0]
 
             f_ap = open(new_ap_name, 'a'); 
             f_lf = open(new_lf_name, 'a');
@@ -192,9 +240,10 @@ class MainWindow(QMainWindow):
 
             f_ap.close(); 
             f_lf.close(); 
+            """
 
         # remove memmap
-        del ap_data, lf_data 
+        del nidq_data, ap_data, lf_data 
 
         np.save(datainfo_name, imec_datainfo); 
         print('imec_datainfo was saved'); 
@@ -205,10 +254,19 @@ def get_imec_datainfo(app):
 
     ### internal structure will be defined in the for loop
     imec_datainfo = dict(); 
+    imec_datainfo['nidq: fname'] = []; 
+    imec_datainfo['nidq: nFileSamp'] = []; 
+    imec_datainfo['nidq: syncCH'] = [];     
+    imec_datainfo['nidq: syncON'] = [];         # syncON in a single file
+    imec_datainfo['nidq: syncOFF'] = [];         # syncON in a single file    
+    imec_datainfo['nidq: nChan'] = []; 
+    imec_datainfo['nidq: SampRate'] = [];  
+
     imec_datainfo['ap: fname'] = []; 
     imec_datainfo['ap: nFileSamp'] = []; 
     imec_datainfo['ap: firstSamp'] = [];     
     imec_datainfo['ap: syncON'] = [];         # syncON in a single file
+    imec_datainfo['ap: syncOFF'] = [];         # syncON in a single file    
     imec_datainfo['ap: syncON_concat'] = [];  # syncON in a concatenated file             
     imec_datainfo['ap: nChan'] = []; 
     imec_datainfo['ap: imSampRate'] = [];  
@@ -217,6 +275,7 @@ def get_imec_datainfo(app):
     imec_datainfo['lf: nFileSamp'] = []; 
     imec_datainfo['lf: firstSamp'] = [];       
     imec_datainfo['lf: syncON'] = [];         # syncON in a single file     
+    imec_datainfo['lf: syncOFF'] = [];         # syncON in a single file         
     imec_datainfo['lf: syncON_concat'] = [];  # syncON in a concatenated file              
     imec_datainfo['lf: nChan'] = []; 
     imec_datainfo['lf: imSampRate'] = [];  
@@ -229,7 +288,20 @@ def get_imec_datainfo(app):
 
     for j in range(len(ap_bins)):
 
-        ### read meta for ap and lf
+        ### read meta for nadq, ap and lf
+        idx_slash = []; 
+        for c in np.arange(len(ap_bins[j])):
+            if ap_bins[j][c]=='/':
+                idx_slash.append(c); 
+
+        nidq_bin = glob.glob(ap_bins[j][:idx_slash[-2]]+'/*nidq.bin')[0]
+        nidq_metaname = nidq_bin[:-3]+'meta'; 
+        nidq_meta = get_metaDict(nidq_metaname); 
+        nidq_syncCH = int(nidq_meta['syncNiChan'])
+        nidq_nChan = int(nidq_meta['nSavedChans']); 
+        nidq_nFileSamp = int(int(nidq_meta['fileSizeBytes'])/(2*nidq_nChan)); 
+        nidq_SampRate = int(nidq_meta['niSampRate']); 
+
         ap_metaname = ap_bins[j][:-3]+'meta'; 
         ap_meta = get_metaDict(ap_metaname); 
         ap_nChan = int(ap_meta['nSavedChans']); 
@@ -243,6 +315,12 @@ def get_imec_datainfo(app):
         lf_imSampRate = int(lf_meta['imSampRate']);        
 
         ### define imec_datainfo
+        imec_datainfo['nidq: fname'].append(nidq_bin); 
+        imec_datainfo['nidq: nFileSamp'].append(nidq_nFileSamp); 
+        imec_datainfo['nidq: nChan'].append(nidq_nChan); 
+        imec_datainfo['nidq: SampRate'].append(nidq_SampRate);  
+        imec_datainfo['nidq: syncCH'].append(nidq_syncCH);    
+        
         imec_datainfo['ap: fname'].append(ap_bins[j]); 
         imec_datainfo['ap: nFileSamp'].append(ap_nFileSamp); 
         if len(imec_datainfo['ap: firstSamp'])==0:
