@@ -207,7 +207,7 @@ class MainWindow(QMainWindow):
             imec_datainfo['ap: syncOFF'].append(ap_syncON_B); 
             imec_datainfo['lf: syncOFF'].append(lf_syncON_B);                                      
 
-            """
+
             # write ap_data, lf_data
             chunk = 0; 
             ap_chunk_size = int(np.ceil(ap_nFileSamp/1000)); 
@@ -240,7 +240,7 @@ class MainWindow(QMainWindow):
 
             f_ap.close(); 
             f_lf.close(); 
-            """
+
 
         # remove memmap
         del nidq_data, ap_data, lf_data 

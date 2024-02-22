@@ -521,6 +521,15 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
         rawdata = []; 
         binname = []; 
         syncON = imec_info['ap: firstSamp'][task_index_in_combine] + imec_info['ap: syncON'][task_index_in_combine]; 
+
+        if 'ap: syncOFF' in imec_info.keys():
+            syncDur_nidq = imec_info['nidq: syncOFF'][task_index_in_combine] - imec_info['nidq: syncON'][task_index_in_combine]; 
+            syncDur_nidq_sec = syncDur_nidq / imec_info['nidq: sampRate'][task_index_in_combine]; 
+
+            # adjusted imSampRate
+            syncDur_ap = imec_info['ap: syncOFF'][task_index_in_combine] - imec_info['ap: syncON'][task_index_in_combine]; 
+            imSampRate = syncDur_ap / syncDur_nidq_sec; 
+
     else:
         binname = imec_filename; 
         metaname = imec_filename[:-3]+'meta'; 
@@ -542,11 +551,60 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
             if syncONs[p+10]-syncONs[p]==10:
                 syncON = syncONs[p]; 
                 break; 
-
-    st = np.load(imec_dataFolder+'spike_times.npy');
-    sc = np.load(imec_dataFolder+'spike_clusters.npy');
     
-    st = (st.astype(dtype='int64')-syncON)/imSampRate;
+        syncOFFs = np.where(
+            rawdata[384,-int(imSampRate*10):] > np.max(rawdata[384, -int(imSampRate*10):])*0.5
+        )[0] + nFileSamp - imSampRate*10;    
+        for p in range(10):
+            if syncOFFs[-p-1]-syncOFFs[-p-11]==10:
+                syncOFF = syncOFFs[-p-1]; 
+                break; 
+        
+        syncDur_ap = syncOFF - syncON; 
+
+        ### check NIDQ
+        idx_slash = []; 
+        for c in np.arange(len(binname)):
+            if binname[c]=='/':
+                idx_slash.append(c); 
+
+        nidq_bin = glob.glob(binname[:idx_slash[-2]]+'/*nidq.bin')[0]
+        nidq_metaname = nidq_bin[:-3]+'meta'; 
+        nidq_meta = get_metaDict(nidq_metaname); 
+        nidq_syncCH = int(nidq_meta['syncNiChan'])
+        nidq_nChan = int(nidq_meta['nSavedChans']); 
+        nidq_nFileSamp = int(int(nidq_meta['fileSizeBytes'])/(2*nidq_nChan)); 
+        nidq_SampRate = int(nidq_meta['niSampRate']);         
+        
+        nidq_data = np.memmap(nidq_bin, dtype='int16', 
+                              shape=(nidq_nFileSamp, nidq_nChan), offset=0, order='C'); 
+        nidq_syncONs = np.where(
+            nidq_data[:nidq_SampRate*20, nidq_syncCH]
+            > np.max(nidq_data[:nidq_SampRate*20, nidq_syncCH])*0.5
+        )[0];    
+        nidq_syncOFFs = np.where(
+            nidq_data[-nidq_SampRate*20:, nidq_syncCH]
+            > np.max(nidq_data[-nidq_SampRate*20:, nidq_syncCH])*0.5
+        )[0] + nidq_nFileSamp - nidq_SampRate*20;    
+        for p in range(10):
+            if nidq_syncONs[p+10]-nidq_syncONs[p]==10:
+                nidq_syncON = nidq_syncONs[p]; 
+                break; 
+        for p in range(10):
+            if nidq_syncOFFs[-p-1]-nidq_syncOFFs[-p-11]==10:
+                nidq_syncOFF = nidq_syncOFFs[-p-1]; 
+                break; 
+        syncDur_nidq = nidq_syncOFF - nidq_syncON; 
+        syncDur_nidq_sec = syncDur_nidq / nidq_SampRate; 
+
+        ### adjust imSampRate    
+        imSampRate = syncDur_ap / syncDur_nidq_sec; 
+
+ 
+    st = np.load(imec_dataFolder+'spike_times.npy'); 
+    sc = np.load(imec_dataFolder+'spike_clusters.npy'); 
+    
+    st = (st.astype(dtype='int64')-syncON)/imSampRate; 
 
     if man_sorted==1:
         df = pd.read_csv(imec_dataFolder+'cluster_info.tsv', sep='\t');
