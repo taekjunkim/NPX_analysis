@@ -17,7 +17,7 @@ import os.path
 import pandas as pd; 
 
 #%%
-def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
+def main(bin_filename, dat_filename, prevTime, maxNumTrials, imec_filename, app):
 
     ### spikets
     """
@@ -26,25 +26,25 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     task_index_in_combine = int(app.tasknum_lineEdit.text()); 
     man_sorted = app.sorted_checkbox.isChecked(); 
 
-    id_all, spikets_all, chpos_all = get_spikeTS(imec_filename, task_index_in_combine, man_sorted); 
+    if imec_filename==[]:
+        spikets = [np.array([0,1,2,3])]; # fake spikets: 1 unit, 4 spikes
+        numNeurons = len(spikets); 
+        neuronid = np.array([0]); 
+    else:
+        id_all, spikets_all, chpos_all = get_spikeTS(imec_filename, task_index_in_combine, man_sorted); 
 
-    if app.sua_radiobutton.isChecked() == True:
-        spikets = spikets_all['sua']; 
-        neuronid = id_all['sua']; 
-    elif app.mua_radiobutton.isChecked() == True:
-        spikets = spikets_all['mua']; 
-        neuronid = id_all['mua']; 
-    elif app.all_radiobutton.isChecked() == True:
-        spikets = spikets_all['sua'] + spikets_all['mua']; 
-        neuronid = id_all['sua'] + id_all['mua']; 
-        pass; 
+        if app.sua_radiobutton.isChecked() == True:
+            spikets = spikets_all['sua']; 
+            neuronid = id_all['sua']; 
+        elif app.mua_radiobutton.isChecked() == True:
+            spikets = spikets_all['mua']; 
+            neuronid = id_all['mua']; 
+        elif app.all_radiobutton.isChecked() == True:
+            spikets = spikets_all['sua'] + spikets_all['mua']; 
+            neuronid = id_all['sua'] + id_all['mua']; 
+            pass; 
 
-    numNeurons = len(spikets); 
-
-
-    #spikets = [[0,1,2,3]]; # fake spikets: 1 unit, 4 spikes
-    #numNeurons = len(spikets); 
-    #neuronid = 0; 
+        numNeurons = len(spikets); 
 
     ### markerts, markervals, photodiode
     """
@@ -65,6 +65,8 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     ### get experiment parameters
     experiment = dict(); 
     postTime = prevTime; 
+    experiment['bin_filename'] = bin_filename;    ## changed for NPX
+    experiment['dat_filename'] = dat_filename;   ## changed for NPX  
     experiment['iti_start'] = []; 
     experiment['iti_end'] = [];    
     experiment['numNeurons'] = numNeurons;        
@@ -72,52 +74,182 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     experiment['id_sua'] = id_all['sua'];        
     experiment['id_mua'] = id_all['mua'];
     experiment['chpos_sua'] = chpos_all['sua'];        
-    experiment['chpos_mua'] = chpos_all['mua'];
+    experiment['chpos_mua'] = chpos_all['mua'];    
     experiment['prevTime'] = prevTime;                        
-    experiment['postTime'] = postTime;          
-    experiment['correct'] = [];                    
+    experiment['postTime'] = postTime;      
+    experiment['numTrials'] = 0; 
+    experiment['refStims'] = [];       
+    experiment['rots'] = []; 
+    experiment['cats'] = []; 
+    experiment['colors'] = [];       
 
-    counter = 0; 
-    ### points where individual trials begin
-    stimITIOns = np.where(markervals==parseParams['startITICode'])[0];     
-    while (counter < stimITIOns[0]): 
-        experiment[markervals_str[counter]] = markervals[counter+1]; 
-        counter += 2; 
+    rots = np.arange(0,360,45); # the standard rotations
+    numNormalColors = 5; # stim color, distracor color, distGray, bg_before and bg_during
 
-    ### Prepare StimStructs
-    stimStructs = [];
-    for i in np.arange(numConds):
-        stimStructs.append(dict()); 
-        stimStructs[i]['numInstances'] = 0;
-        stimStructs[i]['timeOn'] = []; 
-        stimStructs[i]['timeOff'] = []; 
-        stimStructs[i]['pdOn'] = []; 
-        stimStructs[i]['pdOff'] = []; 
+    # Prepare StimStructs
+    stimStructs = []; 
+    maxNumTrials = 3500; 
+    for i in np.arange(maxNumTrials):
+        stimStructs.append(dict());
+        stimStructs[i]['timeOn'] = [];
+        stimStructs[i]['timeOff'] = [];
+
+        # stim params
+        stimStructs[i]['stimID'] = 0; 
+        stimStructs[i]['rotation'] = 0; 
+        stimStructs[i]['category'] = 0; 
+        stimStructs[i]['stimColor'] = 0; 
+
+        # distractor params
+        stimStructs[i]['distID'] = 0; 
+        stimStructs[i]['distN'] = 0; 
+        stimStructs[i]['distD'] = 0; 
+        stimStructs[i]['distS'] = 0.0; 
+        stimStructs[i]['distM'] = 0;   # modeID
+        stimStructs[i]['varyID'] = 0;   # varyID        
+
+        stimStructs[i]['reaction_time'] = []; 
+        stimStructs[i]['trialCode'] = 0; 
+        stimStructs[i]['breakfixTime'] = 0; 
+        stimStructs[i]['pdOn'] = [];
+        stimStructs[i]['pdOff'] = [];
+
         stimStructs[i]['neurons'] = [];        
-        stimStructs[i]['trial_num'] = [];                
         for j in np.arange(numNeurons):
             stimStructs[i]['neurons'].append(dict());
 
-    ### Prepare to get stimulus information parameters                
+    ### get trial independent codes (taks parameters)
+    counter = 0; 
+    if markervals[counter] != parseParams['mon_ppdCode']:
+        print('markerval #'+str(counter)+' was not mon_ppdCode');
+    else:
+        experiment['monppd'] = markervals[counter+1];
+        counter = counter + 2;
+
+    if markervals[counter] != parseParams['fixXCode']:
+        print('markerval #'+str(counter)+' was not fixXCode');
+    else:
+        experiment['fixX'] = markervals[counter+1];
+        counter = counter + 2;
+
+    if markervals[counter] != parseParams['fixYCode']:
+        print('markerval #'+str(counter)+' was not fixYCode');
+    else:
+        experiment['fixY'] = markervals[counter+1];
+        counter = counter + 2;
+
+    if markervals[counter] != parseParams['rfxCode']:
+        print('markerval #'+str(counter)+' was not rfxCode');
+    else:
+        experiment['rfx'] = markervals[counter+1] - parseParams['plexYOffsetCode'];
+        counter = counter + 2;
+        
+    if markervals[counter] != parseParams['rfyCode']:
+        print('markerval #'+str(counter)+' was not rfyCode');
+    else:
+        experiment['rfy'] = markervals[counter+1] - parseParams['plexYOffsetCode'];
+        counter = counter + 2;
+    
+    if markervals[counter] != parseParams['itiCode']:
+        print('markerval #'+str(counter)+' was not itiCode');
+    else:
+        experiment['iti'] = markervals[counter+1];
+        counter = counter + 2;
+
+    if markervals[counter] != parseParams['isiCode']:
+        print('markerval #'+str(counter)+' was not isiCode');
+    else:
+        experiment['isi'] = markervals[counter+1];
+        counter = counter + 2;
+        
+    if markervals[counter] != parseParams['stim_timeCode']:
+        print('markerval #'+str(counter)+' was not stim_timeCode');
+    else:
+        experiment['StimDur'] = markervals[counter+1]; 
+        counter = counter + 2;
+
+    ### next three numbers are rDistractor, rSpace and flankSize
+    experiment['flankSize'] = markervals[counter]; 
+    experiment['distShape'] = markervals[counter+1]; 
+
+    counter = counter+2; 
+
+    ### parse stim IDs
+    numCounter = 0; 
+    numCounter = markervals[counter] - parseParams['stimIDOffset']; 
+    counter = counter+1; 
+
+    if numCounter != 0: # the code for all the stims
+        for i in np.arange(numCounter):
+            stimNow = markervals[counter] - parseParams['stimIDOffset']; 
+            experiment['refStims'].append(stimNow); 
+            counter = counter + 1; 
+
+    ### encoding stimulus rotations
+    numCounter = 0; 
+    numCounter = markervals[counter] - parseParams['stimRotOffset']; 
+    counter = counter + 1; 
+
+    if numCounter != 0: # the code for all the rots
+        for i in np.arange(numCounter):
+            rotNow = markervals[counter] - parseParams['stimRotOffset']; 
+            experiment['rots'].append(rotNow); 
+            counter = counter + 1; 
+
+    ### encoding stimulus categories
+    numCounter = 0; 
+    numCounter = markervals[counter] - parseParams['stimRotOffset']; 
+    counter = counter + 1; 
+
+    if numCounter != 0: # the code for all the categories
+        for i in np.arange(numCounter):
+            catNow = markervals[counter] - parseParams['stimRotOffset']; 
+            experiment['cats'].append(catNow); 
+            counter = counter + 1; 
+
+    ### color code
+    if markervals[counter] != parseParams['colorCode']:
+        print(f'error: markerval #{counter} was not colorCode'); 
+    else:
+        counter = counter + 1; 
+
+    colors = np.where(markervals[counter:counter + 3*numNormalColors] >= parseParams['stimRotOffset'])[0]; 
+    if (len(colors)==0) or (len(colors)!=3*numNormalColors):
+        print(f'error: markervals# {counter}:{counter+3*numNormalColors} were not colors'); 
+    else:
+        tempColors = markervals[counter+colors]; 
+        for j in np.arange(numNormalColors):
+            colorNow = tempColors[j*3:(j+1)*3] - parseParams['stimRotOffset']; 
+            experiment['colors'].append(colorNow); 
+        counter = counter + len(colors); 
+
+    # Prepare to get stimulus information parameters                
+    # Find the startITI codes                
+    stimITIOns = np.where(markervals==parseParams['startITICode'])[0];
     if stimITIOns[0] != counter:
         print('The first start_iti code is offset');
-    stimOns = np.where(markervals==parseParams['stimOnCode'])[0];        
+    stimOns = np.where(markervals==parseParams['stimOnCode'])[0]; # created but not used       
     
-    error_indices = [];
-    completedITIs = 0;
-    ### Get stimuli
-    for i in np.arange(len(stimITIOns)-1): # the file should end with 
+    error_indices = []; 
+    completedITIs = 0; 
+
+    # Outer loop has behavioral exception handling
+    # all stim codes in inner loop
+    for i in np.arange(len(stimITIOns)): # the file should end with 
                                            # a startITI that we don't care about    
         if stimITIOns[i] < counter:
-            continue;
+            continue; 
 
-        index = stimITIOns[i] + 1;
-        next_code = markervals[index];
+        index = stimITIOns[i] + 2;  # eye start and endITI
+        if len(markervals) < index+2: # if there are too few codes, its the last startITI
+            break; 
+
+        next_code = markervals[index]; # either endITI/pause or wrong code
 
         if next_code == parseParams['endITICode']:
-            experiment['iti_start'].append(markerts[stimITIOns[i]]);
-            experiment['iti_end'].append(markerts[index]);
-            completedITIs = completedITIs + 1;
+            experiment['iti_start'].append(markerts[stimITIOns[i]]); 
+            experiment['iti_end'].append(markerts[index]); 
+            completedITIs = completedITIs + 1; 
 
         elif next_code == parseParams['pauseCode']:    
             if markervals[index+1] != parseParams['unpauseCode']:
@@ -126,7 +258,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 error_indices.append(index);           
                 continue;
             index = index + 2;
-            next_code = markervals[index];
+            next_code = markervals[index]; 
 
             if next_code == parseParams['endITICode']:
                 experiment['iti_start'].append(markerts[stimITIOns[i]]);
@@ -144,30 +276,33 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             error_indices.append(index);           
             continue;
 
-        next_code2 = markervals[index+1];
+        next_code2 = markervals[index+2]; # this is fix acquired after fix_On 
         if next_code2 == parseParams['fixAcquiredCode']:
             pass;
         elif next_code2 == parseParams['UninitiatedTrialCode']:
-            if markervals[index+2] != parseParams['startITICode']:
-                error_indices.append(index+2);
+            if markervals[index+3] != parseParams['fix_offCode']:
+                error_indices.append(index+1);
                 print('Found non start_iti code '+str(markervals[index+2])+
                       ' after Uninitiated trial at '+str(index+2));
             continue;
         else:
             print('Found bad code '+str(next_code2)+' after end_iti at index '
                   +str(stimITIOns[i]+2));
-            error_indices.append(index);           
+            error_indices.append(index+1);           
             continue;
 
-        ndex = index + 2;
-        trialCode = [];
+        ndex = index + 3;  # this is index where we're at if fixAcquired
+                           # this would be stimIdcode followed by stimulus number
+        trialCode = []; 
 
+        ### inner loop (through all stimulus codes in a given trial)
         while (trialCode == []):        
-            optionalCode = 0; 
+
+            optionalCode = 0;
             stimCode = markervals[ndex+optionalCode];
             
             if stimCode == parseParams['fixLost']:
-                if hasValidBreakFix(ndex+optionalCode,markervals,parseParams):
+                if hasValidBreakFixMultiMatching(ndex+optionalCode,markervals,parseParams):
                     trialCode = parseParams['breakFixCode'];
                     continue;
             elif stimCode != parseParams['stimIDCode']:
@@ -177,9 +312,10 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 error_indices.append(ndex+optionalCode);
                 trialCode = parseParams['codeError'];
                 continue;
-                
+
+            # stimID    
             if markervals[ndex+1+optionalCode] == parseParams['fixLost']:
-                if hasValidBreakFix(ndex+1+optionalCode,markervals,parseParams):
+                if hasValidBreakFixMultiMatching(ndex+1+optionalCode,markervals,parseParams):
                     trialCode = parseParams['breakFixCode'];
                     continue;
             elif ((markervals[ndex+1+optionalCode] >= parseParams['stimIDOffset']) 
@@ -193,11 +329,199 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 trialCode = parseParams['codeError'];
                 continue;                
 
+            # colorCode
+            if ((markervals[ndex+2+optionalCode] >= parseParams['stimIDOffset']) 
+                  and (markervals[ndex+2+optionalCode] < parseParams['stimRotOffset'])): 
+                colorCodeToStore = markervals[ndex+2+optionalCode];
+            else:
+                print('Found '+str(markervals[ndex+2])+' as a color code at stim time '
+                      +str(markerts[ndex+2+optionalCode])+' at index '+str(ndex+2+optionalCode));
+                print('continuing from next start_iti');                            
+                error_indices.append(ndex+optionalCode+2);
+                trialCode = parseParams['codeError'];
+                continue;                
+
+            # rotCode
+            codeIndex = ndex + 3 + optionalCode
+            rotCode = markervals[codeIndex]; 
+            if rotCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif rotCode != parseParams['rotIDCode']:          
+                print('Missing rotID or fixlost code, found '+str(rotCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex);
+                trialCode = parseParams['codeError'];
+                continue;                
+
+            codeIndex = ndex + 4 + optionalCode
+            rotCode2 = markervals[codeIndex]; 
+            if rotCode2 == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((rotCode2 >= parseParams['stimRotOffset']) 
+                and (rotCode2 <= parseParams['stimRotOffset'])+360):  ## success!
+                rotCodeToStore = rotCode2; 
+            else:
+                print('Missing rotID or fixlost code, found '+str(rotCode2)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex);
+                trialCode = parseParams['codeError'];
+                continue;                
+
+            # catCode 
+            codeIndex = ndex + 5 + optionalCode; 
+            catCode = markervals[codeIndex]; 
+            if catCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif catCode != parseParams['rotIDCode']: # using rotIDCode for category code
+                print('Missing Category code, found '+str(rotCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex);
+                trialCode = parseParams['codeError'];
+                continue;                
+
+            codeIndex = ndex + 6 + optionalCode; 
+            catCode2 = markervals[codeIndex]; 
+            if catCode2 == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((catCode2 >= parseParams['stimRotOffset']) 
+                and (catCode2 <= parseParams['stimRotOffset'])+360):  ## success!
+                catCodeToStore = catCode2; 
+            else:
+                print('Missing Category code, found '+str(rotCode2)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex);
+                trialCode = parseParams['codeError'];
+                continue;          
+
+            # distCode 
+            codeIndex = ndex + 7 + optionalCode; 
+            distCode = markervals[codeIndex]; 
+            if distCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode']; 
+                    continue;
+            elif distCode != parseParams['occl_infoCode']: # using occl_infoCode for dist code
+                print('Missing Dist code, found '+str(rotCode)+' at '+str(codeIndex)); 
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError']; 
+                continue;                
+
+            # next code is either fixlost or distID
+            codeIndex = ndex + 8 + optionalCode; 
+            distCode2 = markervals[codeIndex]; 
+            if distCode2 == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((distCode2 >= parseParams['stimRotOffset']) 
+                and (distCode2 <= parseParams['stimRotOffset'])+360):  ## success!
+                distCodeToStore = distCode2; 
+            else:
+                print('Missing Dist code, found '+str(rotCode2)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex);
+                trialCode = parseParams['codeError'];
+                continue;          
+
+            ## next code is either fixlost or distractor number
+            codeIndex = ndex + 9 + optionalCode;
+            distNCode = markervals[codeIndex]; 
+            if distNCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((distNCode >= parseParams['stimRotOffset']) 
+                and (distNCode <= parseParams['stimRotOffset'])+360):  ## success!
+                distNCodeToStore = distNCode;
+            else: 
+                print('Missing DistN code, found '+str(distNCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError'];
+                continue;          
+
+            ## next code is either fixlost or distractor distance
+            codeIndex = ndex + 10 + optionalCode;
+            distDCode = markervals[codeIndex]; 
+            if distDCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((distDCode >= parseParams['stimRotOffset'])
+                and (distDCode <= parseParams['stimRotOffset'])+360):  ## success!
+                distDCodeToStore = distDCode;
+            else: 
+                print('Missing DistN code, found '+str(distDCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError'];
+                continue;         
+
+            ## next code is either fixlost or distractor mode code which is either 1 or 2
+            codeIndex = ndex + 11 + optionalCode;
+            distMCode = markervals[codeIndex];
+            if distMCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((distMCode >= parseParams['stimRotOffset'])
+                and (distMCode <= parseParams['stimRotOffset'])+2):  ## either 1 or 2!
+                distMCodeToStore = distMCode;
+            else: 
+                print('Missing distM code, found '+str(distMCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError'];
+                continue;          
+
+            ## next code is either fixlost or distractor size fraction
+            codeIndex = ndex + 12 + optionalCode; 
+            distSCode = markervals[codeIndex]; 
+            if distSCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((distSCode >= parseParams['stimRotOffset']) 
+                and (distSCode <= parseParams['stimRotOffset'])+360):  ## success!
+                distSCodeToStore = distSCode;
+            else: 
+                print('Missing DistS code, found '+str(distSCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError'];
+                continue;                         
+
+            ## next code is either fixlost or varyID
+            codeIndex = ndex + 13 + optionalCode; 
+            varyIDCode = markervals[codeIndex]; 
+            if varyIDCode == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
+                    trialCode = parseParams['breakFixCode'];
+                    continue;
+            elif ((varyIDCode >= parseParams['stimRotOffset']) 
+                and (varyIDCode <= parseParams['stimRotOffset'])+360):  ## success!
+                varyIDCodeToStore = varyIDCode;
+            else: 
+                print('Missing varyID code, found '+str(varyIDCode)+' at '+str(codeIndex))
+                print('continuing from next start_iti');                                        
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError'];
+                continue;                                         
+
             ## next code is either fixlost or stimOn
-            codeIndex = ndex + 2 + optionalCode;
-            code = markervals[codeIndex];
+            codeIndex = ndex + 14 + optionalCode;
+            code = markervals[codeIndex]; 
             if code == parseParams['fixLost']:
-                if hasValidBreakFix(codeIndex,markervals,parseParams):
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
                     trialCode = parseParams['breakFixCode'];
                     continue;
             elif code != parseParams['stimOnCode']:          
@@ -209,8 +533,33 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             else:
                 stimOnTime = markerts[codeIndex];
                 
+            ## Having made it here we can now call this a completed stimulus presentation and record the results
+            sIndex = stimIDCodeToStore - parseParams['stimIDOffset'];
+            rotIndex = np.where(rots == (rotCodeToStore - parseParams['stimRotOffset']))[0]; 
+            colorIndex = colorCodeToStore - parseParams['stimIDOffset']; 
+
+            if len(rotIndex) == 0:
+                print(f'Error: did not find correct rotation code following StimON, at StimCode: {stimCode}. Continue ITI {i}')           
+                rotIndex = 1; 
+
+            stimStructs[completedITIs-1]['timeOn'] = stimOnTime; 
+            stimStructs[completedITIs-1]['rotation'] = rotCodeToStore - parseParams['stimRotOffset']; 
+            stimStructs[completedITIs-1]['category'] = catCodeToStore - parseParams['stimRotOffset']; 
+            stimStructs[completedITIs-1]['stimID'] = sIndex; 
+            stimStructs[completedITIs-1]['stimColor'] = colorIndex;
+
+            # distractor parameters
+            stimStructs[completedITIs-1]['distID'] = distCodeToStore - parseParams['stimRotOffset']; 
+            stimStructs[completedITIs-1]['distN'] = distNCodeToStore - parseParams['stimRotOffset']; 
+            stimStructs[completedITIs-1]['distD'] = distDCodeToStore - parseParams['stimRotOffset']; 
+            stimStructs[completedITIs-1]['distS'] = (distSCodeToStore - parseParams['stimRotOffset'])/100.0; 
+            stimStructs[completedITIs-1]['distM'] = distMCodeToStore - parseParams['stimRotOffset'];  # modeID
+            stimStructs[completedITIs-1]['varyID'] = varyIDCodeToStore - parseParams['stimRotOffset'];  # varyID            
+
+
+            codeIndex = ndex + 15 + optionalCode; 
+
             ## next code is either fixlost or stimOff
-            codeIndex = ndex + 3 + optionalCode;
             code = markervals[codeIndex];
             if code == parseParams['fixLost']:
                 if hasValidBreakFix(codeIndex,markervals,parseParams):
@@ -223,26 +572,17 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 trialCode = parseParams['codeError'];
                 continue;                
             else:
+                if (code == parseParams['stimOffCode']) and (markervals[codeIndex+1] == parseParams['NO_RESPCode']):
+                    stimStructs[completedITIs-1]['breakfixTime'] = markerts[codeIndex] - markerts[codeIndex-1];
+                    trialCode = parseParams['NO_RESPCode']; 
+                    stimStructs[completedITIs-1]['trialCode'] = trialCode; 
                 stimOffTime = markerts[codeIndex];
-                
-            ## having made it here, we can now call this a completed stimulus presentation and record the results                
-            sIndex = stimIDCodeToStore - parseParams['stimIDOffset']; 
-            sIndex = sIndex - 1; # for zero-based indexing in python (Matlab doesn't need this);
-            if stimStructs[sIndex]['numInstances'] == []:
-                stimStructs[sIndex]['numInstances'] = 1; 
-            else:                    
-                stimStructs[sIndex]['numInstances'] = stimStructs[sIndex]['numInstances'] + 1;
-                
-            inst = stimStructs[sIndex]['numInstances'];
-            inst = inst - 1; # for zero-based indexing in python (Matlab doesn't need this);
-            stimStructs[sIndex]['timeOn'].append(stimOnTime);               
-            stimStructs[sIndex]['timeOff'].append(stimOffTime);               
-
-            ## add trial num                
-            stimStructs[sIndex]['trial_num'].append(i);                           
+                stimStructs[completedITIs-1]['timeOff'] = stimOffTime;
+                rxtTime = markervals[codeIndex+1];  
+                stimStructs[completedITIs-1]['reaction_time'] = rxtTime - parseParams['stimIDOffset']; 
 
             ## now find the pdiode events associated with
-            pdOnsAfter = np.where(pdOnTS > stimOnTime)[0];
+            pdOnsAfter = np.where(pdOnTS > stimOnTime)[0]; 
             if len(pdOnsAfter)==0:
                 print('Error, did not find a photodiode on code after stimon at time '+str(stimOnTime));
                 print('Ignoring... Continuing');
@@ -252,71 +592,79 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                     print('Error, did not find a photodiode on code after stimon at time '+str(pdOnTS[pdOnsAfter[0]]));
                     print('Ignoring... Continuing');
                 else:
-                    stimStructs[sIndex]['pdOn'].append(pdOnTS[pdOnsAfter[0]]);
-                    stimStructs[sIndex]['pdOff'].append(pdOffTS[pdOffsAfter[0]]);                    
+                    stimStructs[completedITIs-1]['pdOn'].append(pdOnTS[pdOnsAfter[0]]); 
+                    stimStructs[completedITIs-1]['pdOff'].append(pdOffTS[pdOffsAfter[0]]);                    
 
-            ## now get neural data
+            # find which happens first stimOnTime or pdOn, start recording
+            # neural data at this time - prevTime
+            if len(stimStructs[completedITIs-1]['pdOn'])>0:
+                #potentialStart = np.min([stimOnTime, stimStructs[completedITIs-1]['pdOn'][0]]); 
+                potentialStart = stimStructs[completedITIs-1]['pdOn'][0]; 
+            else:
+                potentialStart = stimOnTime; 
+
+            # find which happens last stimOffTime or pdOff, stop recording
+            # neural data at this time + postTime
+            if len(stimStructs[completedITIs-1]['pdOff'])>0:
+                #potentialEnd = np.max([stimOffTime, stimStructs[completedITIs-1]['pdOff'][0]]); 
+                potentialEnd = np.max([potentialStart+300, stimStructs[completedITIs-1]['pdOff'][0]]); 
+            else:
+                potentialEnd = stimOffTime; 
+
+    
+            ## now get neural data: single trial gives one spike train
+            ## in other tasks, single trial can give multiple spike trains associated with multiple conditions
             for j in np.arange(numNeurons):
                 mySpikes = np.array([]);
-                if stimStructs[sIndex]['pdOff'] != []:
-                    spikeIndices = np.where((spikets[j] >= (stimOnTime-prevTime)) & 
-                                            (spikets[j] <= (stimStructs[sIndex]['pdOff'][inst]+postTime)))[0];
-                else:
-                    spikeIndices = np.where((spikets[j] >= (stimOnTime-prevTime)) & 
-                                            (spikets[j] <= (stimOffTime+postTime)))[0];
+
+                spikeIndices = np.where((spikets[j] >= (potentialStart-prevTime)) & 
+                                        (spikets[j] <= (potentialEnd+postTime)))[0];
                                             
                 if len(spikeIndices)>0:
                     mySpikes = np.append(mySpikes,spikets[j][spikeIndices]);
-                if inst == 0:
-                    stimStructs[sIndex]['neurons'][j]['spikes'] = [];
-                stimStructs[sIndex]['neurons'][j]['spikes'].append(mySpikes);    
-                
-            ## next code is either fixlost, an object code or correct_response
-            codeIndex = ndex + 4 + optionalCode;
-            code = markervals[codeIndex];
+                stimStructs[completedITIs-1]['neurons'][j]['spikes'] = mySpikes; 
 
-            if code == parseParams['fixLost']:
-                if hasValidBreakFix(codeIndex,markervals,parseParams):
+
+            ## next code is either EARLY_RELEASECode, correctCode, WRONG_RESPCode or fixLost
+            codeIndex = ndex + 17 + optionalCode;
+            code = markervals[codeIndex]; 
+
+            if code == parseParams['EARLY_RELEASECode']:
+                trialCode = parseParams['EARLY_RELEASECode']; 
+                continue; 
+            elif code == parseParams['correctCode']: 
+                trialCode = parseParams['correctCode']; 
+                stimStructs[completedITIs-1]['trialCode'] = 1; 
+                continue;
+            elif code == parseParams['WRONG_RESPCode']: 
+                trialCode = parseParams['WRONG_RESPCode']; 
+                stimStructs[completedITIs-1]['trialCode'] = 2; 
+                continue;
+            elif code == parseParams['fixLost']:
+                if hasValidBreakFixMultiMatching(codeIndex,markervals,parseParams):
                     trialCode = parseParams['breakFixCode'];
                     continue;
-            elif code == parseParams['correctCode']: # end of trial
-                experiment['correct'].append(i);                                     
-                if markervals[codeIndex+1] != parseParams['startITICode']:
-                    print('Missing startITI after '+str(markervals[codeIndex+1])+
-                          ' at '+str(markerts[codeIndex+1])+' at index '+
-                          str(codeIndex+1));
-                    error_indices.append(codeIndex);
-                    trialCode = parseParams['codeError'];
-                    continue;                
-                else:
-                    trialCode = parseParams['correctCode'];
-                    continue;
-            elif code != parseParams['stimIDCode']:                
-                print('Found '+str(stimCode)+' as a stim ID code at stim time '+
-                      str(markerts[codeIndex]));
-                print('continuing from next start_iti');                        
-                error_indices.append(codeIndex);
-                trialCode = parseParams['codeError'];
-                continue;                
-            else:
-                ndex = ndex + 4 + optionalCode;                    
-                                    
-    ### add stimStructs to experiment output, then return
+
+#%% add stimStructs to experiment output, then return
     experiment['stimStructs'] = stimStructs;                        
     experiment['errors'] = error_indices; 
+    experiment['numTrials'] = completedITIs;    
     
     return experiment;
 
-#%% hasValidBreakFix
-def hasValidBreakFix(ndex, markervals, parseParams):
-    if markervals[ndex+1] != parseParams['breakFixCode']:
+#%% hasValidBreakFixMultiMatching
+def hasValidBreakFixMultiMatching(ndex, markervals, parseParams):
+    if markervals[ndex] != parseParams['fixLost']:
         print('missing breakFixCode after '+str(markervals[ndex])+
               ' at index '+str(ndex));
-    if markervals[ndex+2] != parseParams['startITICode']:
-        print('missing startITI after '+str(markervals[ndex+1])+
+    if markervals[ndex+1] != parseParams['fix_offCode']:
+        print('missing fix_offCode after '+str(markervals[ndex+1])+
               ' at index '+str(ndex));
+    if markervals[ndex+2] != parseParams['eye_stopCode']:
+        print('missing eye_stopCode after '+str(markervals[ndex+2])+
+              ' at index '+str(ndex));             
     yesno = 1;    
-    return yesno;
+    return yesno; 
 
 #%% get_markervals
 def get_markervals(dat_filename):
@@ -444,7 +792,7 @@ def get_event_ts(bin_filename, markervals_str):
     syncONs = np.where(rawData[syncCh,:niSampRate*20]
                       >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
     for p in range(10):
-        if syncONs[p+10]-syncONs[p]==10:
+        if syncONs[p+1]-syncONs[p]==1:
             syncON = syncONs[p]; 
             break; 
 
@@ -455,24 +803,8 @@ def get_event_ts(bin_filename, markervals_str):
 
     ### time (ms) with respect to syncON
     markerts = (np.where(digit_diff==2)[0] + 1 - syncON)/niSampRate; 
-    pdOnTS_raw = (np.where(digit_diff==1)[0] + 1 - syncON)/niSampRate; 
-    pdOffTS_raw = (np.where(digit_diff==-1)[0] + 1 - syncON)/niSampRate; 
-
-    ### this is for photodiode generating pdOn for every frame
-    pdOn_dist = pdOnTS_raw[1:] - pdOnTS_raw[:-1];
-    pdOnTS = np.append(pdOnTS_raw[0],
-                       pdOnTS_raw[np.where(pdOn_dist>0.02)[0]+1]);
-
-    pdOff_dist = pdOffTS_raw[1:] - pdOffTS_raw[:-1];
-    pdOffTS = np.append(pdOffTS_raw[np.where(pdOff_dist>0.02)[0]],
-                        pdOffTS_raw[-1]); 
-
-    """
-    ### this is for photodiode generating continuous pdOn
-    pdOnTS = pdOnTS_raw; 
-    pdOffTS = pdOffTS_raw; 
-    """
-
+    pdOnTS = (np.where(digit_diff==1)[0] + 1 - syncON)/niSampRate; 
+    pdOffTS = (np.where(digit_diff==-1)[0] + 1 - syncON)/niSampRate; 
 
     if len(markerts)==len(markervals_str):
         print('Good: number of events are well matched');         
@@ -480,16 +812,12 @@ def get_event_ts(bin_filename, markervals_str):
     else:
         markerts = np.zeros(len(markervals_str)); 
         stim_ons = np.where(markervals_str=='sample_on')[0]; 
-        #stim_ons = np.where(markervals_str=='test_on')[0];         
         if len(stim_ons) == len(pdOnTS):
             print('number of pdONs is matched with "sample_on"');             
             markerts[stim_ons] = pdOnTS - 0.001;   # 1 ms earlier than pdOnTS  
         else:
             print('number of pdONs is not matched with "sample_on"'); 
-            if len(stim_ons)<len(pdOnTS):
-                markerts[stim_ons] = pdOnTS[:len(stim_ons)] - 0.001; 
-            else:
-                markerts[stim_ons[:len(pdOnTS)]] = pdOnTS - 0.001; 
+            markerts[stim_ons] = pdOnTS[:len(stim_ons)] - 0.001; 
 
     # timestamps in seconds
     return markerts, pdOnTS, pdOffTS
@@ -690,13 +1018,14 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
 
 
 #%% get_rawData
-def access_rawData(binFullPath, meta):  
+def access_rawData(binFullPath, meta):
     nChan = int(meta['nSavedChans'])
     nFileSamp = int(int(meta['fileSizeBytes'])/(2*nChan))
     print("nChan: %d, nFileSamp: %d" % (nChan, nFileSamp))
     rawData = np.memmap(binFullPath, dtype='int16', mode='r',
                         shape=(nChan, nFileSamp), offset=0, order='F')
     return(rawData)
+
 
 
 #%% Load parameters, which will be compared with markervals
@@ -729,6 +1058,8 @@ def get_parseParams():
     parseParams['fixAcquiredCode'] = 31;
     parseParams['fixation_occursCode'] = 22;
     parseParams['fixLost'] = 33;
+    parseParams['fixXCode'] = 76;
+    parseParams['fixYCode'] = 77;        
     parseParams['foreground_infoCode'] = 69;
     parseParams['gen_modeCode'] = 65;
     parseParams['gen_submodeCode'] = 66;
@@ -744,6 +1075,7 @@ def get_parseParams():
     parseParams['maxColorValue'] = 256;
     parseParams['MAXRT_EXCEEDEDCode'] = 3;
     parseParams['midground_infoCode'] = 68;
+    parseParams['mon_ppdCode'] = 78;    
     parseParams['NO_RESPCode'] = 8;
     parseParams['occl_infoCode'] = 53;
     parseParams['occlmodeCode'] = 52;
