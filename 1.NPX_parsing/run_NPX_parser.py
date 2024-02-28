@@ -56,19 +56,20 @@ class MainWindow(QMainWindow):
 
         self.combobox = QtWidgets.QComboBox(); 
         self.combobox.addItems(['None']); 
+        self.combobox.addItems(['ClutterStim']);     
+        self.combobox.addItems(['CategoryTask']);             
+        self.combobox.addItems(['DriftingGrating']); 
         self.combobox.addItems(['ExtractWaveform']);         
+        self.combobox.addItems(['Kiani_gaze']);                        
         self.combobox.addItems(['KS_DriftMap']);                 
         self.combobox.addItems(['LFP_power']);         
-        self.combobox.addItems(['DriftingGrating']); 
+        self.combobox.addItems(['PositionInvariance']);  
         self.combobox.addItems(['RndDotRFmap']);         
-        self.combobox.addItems(['ClutterStim']);          
         self.combobox.addItems(['SaliencyPS']);          
         self.combobox.addItems(['ShapeTexture']);                  
-        self.combobox.addItems(['PositionInvariance']);  
-        self.combobox.addItems(['Texture3Ver']);                               
         self.combobox.addItems(['StimDuration']);                                         
         self.combobox.addItems(['SurroundMap']);                                                 
-        self.combobox.addItems(['Kiani_gaze']);                        
+        self.combobox.addItems(['Texture3Ver']);                               
         self.combobox.addItems(['TextureFlow']);                                                                 
 
         self.tasknum_label = QtWidgets.QLabel(); 
@@ -156,10 +157,13 @@ class MainWindow(QMainWindow):
         if self.combobox.currentText() == 'LFP_power':
             from tasks import LFP_power_NPX_Analysis as LFP_p_NPX; 
             LFP_p_NPX.main(self); 
-        if self.combobox.currentText() == 'ExtractWaveform':
+        elif self.combobox.currentText() == 'CategoryTask':
+            from tasks import CategoryTask_NPX_Analysis as Category_NPX; 
+            Category_NPX.main(self); 
+        elif self.combobox.currentText() == 'ExtractWaveform':
             from tasks import ExtractWaveform_NPX_Analysis as EW_NPX; 
             EW_NPX.main(self); 
-        if self.combobox.currentText() == 'KS_DriftMap':
+        elif self.combobox.currentText() == 'KS_DriftMap':
             from tasks import KS_DriftMap_NPX_Analysis as KS_Drift_NPX; 
             KS_Drift_NPX.main(self);         
         elif self.combobox.currentText() == 'DriftingGrating':

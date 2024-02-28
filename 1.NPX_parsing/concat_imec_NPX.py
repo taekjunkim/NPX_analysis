@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
             # write ap_data, lf_data
             chunk = 0; 
             ap_chunk_size = int(np.ceil(ap_nFileSamp/1000)); 
-            lf_chunk_size = int(np.ceil(lf_nFileSamp/1000)); nidq_bin = glob.glob(ap_bins[j][:idx_slash[-2]]+'/*nidq.bin')[0]
+            lf_chunk_size = int(np.ceil(lf_nFileSamp/1000)); 
 
             f_ap = open(new_ap_name, 'a'); 
             f_lf = open(new_lf_name, 'a');
