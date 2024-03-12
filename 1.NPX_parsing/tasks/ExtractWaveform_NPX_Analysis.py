@@ -11,11 +11,12 @@ ExtractWaveform_NPX_Analysis.py
 import sys
 import matplotlib.pyplot as plt
 from phylib.io.model import load_model
-from phylib.utils.color import selected_cluster_color
+#from phylib.utils.color import selected_cluster_color
 import pandas as pd; 
 import numpy as np; 
 import json;
 import gzip;
+import os; 
 
 
 #%%
@@ -65,10 +66,16 @@ def main(app):
             print(f'cluster_id: {cid} was processed'); 
 
     # save data    
-    name_to_save = imec_dataFolder + 'mean_waveform.json.gz';
-    f = gzip.GzipFile(name_to_save,'w');    
-    f.write(json.dumps(mean_wf, cls=NumpyEncoder).encode('utf-8')); 
-    f.close(); 
+    path_to_save = imec_dataFolder + 'processed/'; 
+    if os.path.exist(path_to_save)==0:
+        os.mkdir(path_to_save); 
+    name_to_save = imec_dataFolder + 'processed/mean_waveform.npz';    
+    np.savez_compressed(name_to_save, **mean_wf)
+
+    #name_to_save = imec_dataFolder + 'processed/mean_waveform.json.gz'; 
+    #f = gzip.GzipFile(name_to_save,'w');    
+    #f.write(json.dumps(mean_wf, cls=NumpyEncoder).encode('utf-8')); 
+    #f.close(); 
     print('processed file was saved'); 
 
 
