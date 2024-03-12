@@ -1133,6 +1133,8 @@ def main(app):
 
                 plt.tight_layout(); 
                 plt.show(); 
+    print("Behavior data was processed"); 
+
 
     ### Neuronal Response
     nClusters = experiment['numNeurons']; 
@@ -1144,6 +1146,8 @@ def main(app):
 
     StimResp = []; 
     mResp = np.zeros((numTrials,nClusters)); 
+    psth_mtx = np.zeros((numTrials,int(300 + prevTime*1000*2),nClusters));     
+    psth_mtx[:] = np.nan;     
     for i in np.arange(numTrials):
         StimResp.append(dict());
         StimResp[i]['timeOn'] = experiment['stimStructs'][i]['timeOn']; 
@@ -1170,8 +1174,42 @@ def main(app):
                 
                 StimResp[i]['neurons'][j]['meanSDF'] = makeSDF.getSDF(StimResp[i]['neurons'][j]['spkMtx'],1000);
                 mResp[i,j] = np.mean(StimResp[i]['neurons'][j]['meanSDF'][TimeOfInterest])
+                psth_mtx[i,:,j] = makeSDF.getSDF(StimResp[i]['neurons'][j]['spkMtx'],1000);     
             else:
                 mResp[i,j] = np.nan; 
+        print(f"StimResp {i}/{numTrials} was processed"); 
+    
+
+    del experiment['stimStructs']; 
+    del experiment['iti_start']; 
+    del experiment['iti_end']; 
+    experiment['filename'] = dat_filename; 
+    experiment['StimResp'] = StimResp; 
+    experiment['behVec'] = behVec; 
+    #experiment['pCorrect'] = pCorrect;    
+    #experiment['correct_RT'] = correct_RT;    
+    #experiment['wrong_RT'] = wrong_RT;        
+
+    ### save experiment (processed file)
+    path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
+    if os.path.exists(path_to_save)==0:
+        os.mkdir(path_to_save); 
+    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('\\')+1):-8] + 'npz';
+    np.savez_compressed(name_to_save, **experiment); 
+
+    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
+    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('\\')+1):-8] + 'json.gz';    
+    #f = gzip.GzipFile(name_to_save,'wb');    
+    #f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
+    #f.close(); 
+    print('processed file was saved'); 
+
+
+    ### Drawing Part ###
+    plt.figure(figsize=(6, 3)); 
+    plt.plot(np.arange(-prevTime*1000,prevTime*1000+300),
+             np.nanmean(np.nanmean(psth_mtx,axis=0),axis=1)); 
 
     # sort neurons according to response level (strong to weak)
     neurons_from_strong = np.nansum(mResp,axis=0).argsort()[::-1]; 
@@ -1283,12 +1321,17 @@ def main(app):
         ax2.spines.top.set_visible(False);         
 
         ax3.clear(); 
+        meanSDF_mtx = []; 
         for i in np.arange(n_refStim):
             target_id = target_preference[i];
             meanSDF_now = np.mean(tAlone[target_id]['neurons'][unit_now]['SDF'],axis=0); 
             color_now = np.array([1,0,0]) + np.array([0,1/n_refStim,1/n_refStim])*i; 
             ax3.plot(np.arange(-prevTime*1000,prevTime*1000+300),
                      meanSDF_now, color=color_now); 
+            meanSDF_mtx.append(meanSDF_now); 
+        meanSDF_mtx.append(meanSDF_now); 
+        ax3.plot(np.arange(-prevTime*1000,prevTime*1000+300),
+                 np.mean(meanSDF_mtx,axis=0), color=[0,0,0]); 
         ax3.set_xlabel('Time from stimulus onset (ms)'); 
         ax3.set_ylabel('Response (spikes/s)'); 
         ax3.set_title(f'Target alone: j = {j}/{nClusters}: unit_id = {unit_id}'); 
@@ -1302,6 +1345,7 @@ def main(app):
         if app.running == 0:
             break; 
     plt.show(); 
+
 
 
 class NumpyEncoder(json.JSONEncoder):
