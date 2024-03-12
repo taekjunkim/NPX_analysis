@@ -1194,8 +1194,8 @@ def main(app):
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
-    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
-    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('\\')+1):-8] + 'npz';
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('\\')+1):-8] + 'npz';
     np.savez_compressed(name_to_save, **experiment); 
 
     #name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
