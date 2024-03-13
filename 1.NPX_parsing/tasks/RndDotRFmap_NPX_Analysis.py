@@ -193,7 +193,7 @@ def main(app):
             data_fitted0 = twoD_Gaussian(posData, *popt);     
             fit_r = np.corrcoef(data_fitted0, RFmap_norm.ravel())[0,1]; 
 
-            if fit_r>np.sqrt(0.81):
+            if fit_r>np.sqrt(0.64):
                 data_fitted = twoD_Gaussian(posData2, *popt); 
 
                 if unit_id in experiment['id_sua']:
