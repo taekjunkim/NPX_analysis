@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         self.combobox.addItems(['ClutterStim']);     
         self.combobox.addItems(['CategoryTask']);             
         self.combobox.addItems(['DriftingGrating']); 
+        self.combobox.addItems(['ObjSurfMotion']);         
         self.combobox.addItems(['ExtractWaveform']);         
         self.combobox.addItems(['Kiani_gaze']);                        
         self.combobox.addItems(['KS_DriftMap']);                 
@@ -169,6 +170,9 @@ class MainWindow(QMainWindow):
         elif self.combobox.currentText() == 'DriftingGrating':
             from tasks import DriftingGrating_NPX_Analysis as DG_NPX; 
             DG_NPX.main(self); 
+        elif self.combobox.currentText() == 'ObjSurfMotion':
+            from tasks import ObjSurfMotion_NPX_Analysis as OSM_NPX; 
+            OSM_NPX.main(self); 
         elif self.combobox.currentText() == 'RndDotRFmap':      
             from tasks import RndDotRFmap_NPX_Analysis as RndDot_NPX; 
             RndDot_NPX.main(self); 

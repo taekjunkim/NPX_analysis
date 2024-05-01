@@ -184,6 +184,13 @@ def main(app):
 
     plt.show(block=True); 
 
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'json.gz';
+    f = gzip.GzipFile(name_to_save,'w');    
+    f.write(json.dumps(experiment, cls=NumpyEncoder).encode('utf-8')); 
+    f.close(); 
+    print('processed file was saved'); 
+
+
 
 
 class NumpyEncoder(json.JSONEncoder):
