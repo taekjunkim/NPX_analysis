@@ -358,6 +358,9 @@ def compute_syncONs(imec_datainfo, i):
     sON_valid_idx0 = len(nidq_sON) - len(lf_sON); 
     nidq_sync_dur = (nidq_sOFF[-1]-nidq_sON[sON_valid_idx0])/nidq_SampRate; 
 
+    last_seconds = (lf_nFileSamp-lf_sOFF[-1])/lf_imSampRate; 
+    last_seconds = int(last_seconds+1); 
+
     ap_name = imec_datainfo['ap: fname'][i]; 
     ap_nFileSamp = imec_datainfo['ap: nFileSamp'][i]; 
     ap_nChan = imec_datainfo['ap: nChan'][i]; 
@@ -365,7 +368,7 @@ def compute_syncONs(imec_datainfo, i):
     ap_data = np.memmap(ap_name, dtype='int16', 
                         shape=(ap_nFileSamp, ap_nChan), offset=0, order='C'); 
 
-    ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*10),384]==64)[0]; 
+    ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*last_seconds),384]==64)[0]; 
     ap_sONs = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
     if ap_sONs[0]==0:
         ap_sON = ap_sONs[1]; 
@@ -373,7 +376,7 @@ def compute_syncONs(imec_datainfo, i):
         ap_sON = ap_sONs[0]; 
 
     ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*10):,384]==64)[0]; 
-    ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*10;    
+    ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*last_seconds;    
 
 
     sync_start_end = dict(); 

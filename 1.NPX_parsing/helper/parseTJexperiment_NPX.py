@@ -688,6 +688,9 @@ def compute_syncONs(imec_filename):
     sON_valid_idx0 = len(nidq_sON) - len(lf_sON); 
     nidq_sync_dur = (nidq_sOFF[-1]-nidq_sON[sON_valid_idx0])/nidq_SampRate; 
 
+    last_seconds = (lf_nFileSamp-lf_sOFF[-1])/lf_imSampRate; 
+    last_seconds = int(last_seconds+1); 
+
     ap_meta = get_metaDict(ap_binname[:-3]+'meta'); 
     ap_nChan = int(ap_meta['nSavedChans']); 
     ap_nFileSamp = int(int(ap_meta['fileSizeBytes'])/(2*ap_nChan)); 
@@ -702,8 +705,8 @@ def compute_syncONs(imec_filename):
     else:
         ap_sON = ap_sONs[0]; 
 
-    ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*10):,384]==64)[0]; 
-    ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*10;    
+    ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*last_seconds):,384]==64)[0]; 
+    ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*last_seconds;    
 
     imSampRate = (ap_sOFF - ap_sON) / nidq_sync_dur; 
     syncON = ap_sON;     
