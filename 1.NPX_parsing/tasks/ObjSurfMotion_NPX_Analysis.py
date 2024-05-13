@@ -103,7 +103,7 @@ def main(app):
         ax2.set_title('Surface motion')            
 
         plt.tight_layout(); 
-        plt.pause(0.5); 
+        plt.pause(3); 
 
         if app.running == 0:
             break; 

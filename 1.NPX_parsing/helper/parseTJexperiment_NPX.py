@@ -15,6 +15,7 @@ neo.io.NeuroExplorerIO has some errors
 import numpy as np;
 import os.path
 import pandas as pd; 
+import glob; 
 
 #%%
 def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
@@ -26,7 +27,9 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     task_index_in_combine = int(app.tasknum_lineEdit.text()); 
     man_sorted = app.sorted_checkbox.isChecked(); 
 
-    id_all, spikets_all, chpos_all = get_spikeTS(imec_filename, task_index_in_combine, man_sorted); 
+    sync_start_end = compute_syncONs(imec_filename); 
+
+    id_all, spikets_all, chpos_all = get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end); 
 
     if app.sua_radiobutton.isChecked() == True:
         spikets = spikets_all['sua']; 
@@ -57,7 +60,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     """
     markervals, markervals_str = get_markervals(dat_filename); 
 
-    markerts, pdOnTS, pdOffTS = get_event_ts(bin_filename, markervals_str); 
+    markerts, pdOnTS, pdOffTS = get_event_ts(bin_filename, markervals_str, sync_start_end); 
 
     ### get parseParams
     parseParams = get_parseParams(); 
@@ -423,7 +426,7 @@ def get_markervals(dat_filename):
     return np.array(markervals), np.array(markervals_str); 
 
 #%% markerts, pdOnTS, pdOffTS
-def get_event_ts(bin_filename, markervals_str):
+def get_event_ts(bin_filename, markervals_str, sync_start_end):
    
     meta_filename = bin_filename[:-3]+'meta'; 
     metaDict = get_metaDict(meta_filename); 
@@ -440,13 +443,15 @@ def get_event_ts(bin_filename, markervals_str):
 
     ### detect syncOn in the first 20 seconds
     niSampRate = int(metaDict['niSampRate']); 
-    syncCh = int(metaDict['syncNiChan']); 
-    syncONs = np.where(rawData[syncCh,:niSampRate*20]
-                      >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
-    for p in range(10):
-        if syncONs[p+10]-syncONs[p]==10:
-            syncON = syncONs[p]; 
-            break; 
+    #syncCh = int(metaDict['syncNiChan']); 
+    #syncONs = np.where(rawData[syncCh,:niSampRate*20]
+    #                  >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
+    #for p in range(10):
+    #    if syncONs[p+10]-syncONs[p]==10:
+    #        syncON = syncONs[p]; 
+    #        break; 
+
+    syncON = sync_start_end['nidq'][0]; 
 
     ### read digit signal
     digitCh = np.shape(rawData)[0]-1;   # the last channel     
@@ -510,7 +515,7 @@ def get_metaDict(metaname):
     return metaDict;
 
 #%% get_spikets
-def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):    
+def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end):    
 
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
@@ -531,75 +536,11 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
             imSampRate = syncDur_ap / syncDur_nidq_sec; 
 
     else:
-        binname = imec_filename; 
-        metaname = imec_filename[:-3]+'meta'; 
+        ap_binname = imec_filename; 
 
-        metaDict = get_metaDict(metaname);
-        imSampRate = float(metaDict['imSampRate']);
-        nChan = int(metaDict['nSavedChans']);
-        nFileSamp = int(int(metaDict['fileSizeBytes'])/(2*nChan));
-
-        """
-        with open(binname,'r') as fid:
-            ### to get synON, read the first 10 sec signal
-            rawdata = np.fromfile(fid,np.int16,count=int(imSampRate)*10*nChan).reshape([nChan,10*int(imSampRate)],order='F');
-        """
-        rawdata = np.memmap(binname, dtype='int16', mode='r', shape=(nChan,nFileSamp),order='F');
-
-        syncONs = np.where(rawdata[384,:int(imSampRate*10)]>np.max(rawdata[384,:int(imSampRate*10)])*0.5)[0];
-        for p in range(10):
-            if syncONs[p+10]-syncONs[p]==10:
-                syncON = syncONs[p]; 
-                break; 
-    
-        syncOFFs = np.where(
-            rawdata[384,-int(imSampRate*10):] > np.max(rawdata[384, -int(imSampRate*10):])*0.5
-        )[0] + nFileSamp - imSampRate*10;    
-        for p in range(10):
-            if syncOFFs[-p-1]-syncOFFs[-p-11]==10:
-                syncOFF = syncOFFs[-p-1]; 
-                break; 
-        
-        syncDur_ap = syncOFF - syncON; 
-
-        ### check NIDQ
-        idx_slash = []; 
-        for c in np.arange(len(binname)):
-            if binname[c]=='/':
-                idx_slash.append(c); 
-
-        nidq_bin = glob.glob(binname[:idx_slash[-2]]+'/*nidq.bin')[0]
-        nidq_metaname = nidq_bin[:-3]+'meta'; 
-        nidq_meta = get_metaDict(nidq_metaname); 
-        nidq_syncCH = int(nidq_meta['syncNiChan'])
-        nidq_nChan = int(nidq_meta['nSavedChans']); 
-        nidq_nFileSamp = int(int(nidq_meta['fileSizeBytes'])/(2*nidq_nChan)); 
-        nidq_SampRate = int(nidq_meta['niSampRate']);         
-        
-        nidq_data = np.memmap(nidq_bin, dtype='int16', 
-                              shape=(nidq_nFileSamp, nidq_nChan), offset=0, order='C'); 
-        nidq_syncONs = np.where(
-            nidq_data[:nidq_SampRate*20, nidq_syncCH]
-            > np.max(nidq_data[:nidq_SampRate*20, nidq_syncCH])*0.5
-        )[0];    
-        nidq_syncOFFs = np.where(
-            nidq_data[-nidq_SampRate*20:, nidq_syncCH]
-            > np.max(nidq_data[-nidq_SampRate*20:, nidq_syncCH])*0.5
-        )[0] + nidq_nFileSamp - nidq_SampRate*20;    
-        for p in range(10):
-            if nidq_syncONs[p+10]-nidq_syncONs[p]==10:
-                nidq_syncON = nidq_syncONs[p]; 
-                break; 
-        for p in range(10):
-            if nidq_syncOFFs[-p-1]-nidq_syncOFFs[-p-11]==10:
-                nidq_syncOFF = nidq_syncOFFs[-p-1]; 
-                break; 
-        syncDur_nidq = nidq_syncOFF - nidq_syncON; 
-        syncDur_nidq_sec = syncDur_nidq / nidq_SampRate; 
-
-        ### adjust imSampRate    
-        imSampRate = syncDur_ap / syncDur_nidq_sec; 
-
+        nidq_sync_dur = (sync_start_end['nidq'][1]-sync_start_end['nidq'][0])/25000; 
+        imSampRate = (sync_start_end['ap_bin'][1]-sync_start_end['ap_bin'][0]) / nidq_sync_dur; 
+        syncON = sync_start_end['ap_bin'][0];  
  
     st = np.load(imec_dataFolder+'spike_times.npy'); 
     sc = np.load(imec_dataFolder+'spike_clusters.npy'); 
@@ -616,6 +557,14 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
             df.loc[i,'yc'] = ch_pos[id_chmap,1]; 
     else:
         df = pd.read_csv(imec_dataFolder+'cluster_KSLabel.tsv', sep='\t');
+
+        ch_map = np.load(imec_dataFolder+'channel_map.npy').flatten();  
+        ch_pos = np.load(imec_dataFolder+'channel_positions.npy');  
+
+        templates = np.load(imec_dataFolder+'templates.npy'); 
+        chan_best = (templates**2).sum(axis=1).argmax(axis=-1); 
+
+        """
         spikeTemps = np.load(imec_dataFolder+'spike_templates.npy'); 
         spikeTempAmps = np.load(imec_dataFolder+'amplitudes.npy'); 
         pcFeat = np.load(imec_dataFolder+'pc_features.npy');     
@@ -629,15 +578,14 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
         spikeFeatInd = pcFeatInd[spikeTemps,:];     
         spikeFeatYcoords = np.squeeze(ycoords[spikeFeatInd]);  # 2D matrix of size #spikes x 12 
         spikeDepths = np.sum(np.multiply(spikeFeatYcoords,pcFeat**2),axis=1)/np.sum(pcFeat**2,axis=1);  
+        """
 
         for i in np.arange(df.shape[0]):
             spk_now = np.where(sc==df.loc[i,'cluster_id'])[0]; 
-            depths_now = np.nanmean(spikeDepths[spk_now]); 
-            if ~np.isnan(depths_now):
-                depths_now = round(depths_now); 
+            ch_now = chan_best[i]; 
 
-            df.loc[i,'xc'] = np.nan; 
-            df.loc[i,'yc'] = depths_now; 
+            df.loc[i,'xc'] = ch_pos[ch_now,0]; 
+            df.loc[i,'yc'] = ch_pos[ch_now,1]; 
 
     
     ### check inter-spike interval
@@ -682,10 +630,90 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
                 spikets_all['mua'].append(spk_ts);    
                 chpos_all['mua'].append(chpos); 
     
-    del rawdata, binname;
+    del rawdata, binname; 
 
     # timestamps in seconds    
     return id_all, spikets_all, chpos_all; 
+
+#%% compute_syncONs
+def compute_syncONs(imec_filename):
+    ap_binname = imec_filename; 
+
+    ### check nidq
+    idx_slash = []; 
+    for c in np.arange(len(ap_binname)):
+        if ap_binname[c]=='/':
+            idx_slash.append(c); 
+    nidq_binname = glob.glob(ap_binname[:idx_slash[-2]]+'/*nidq.bin')[0]
+
+    nidq_meta = get_metaDict(nidq_binname[:-3]+'meta'); 
+    nidq_syncCH = int(nidq_meta['syncNiChan'])
+    nidq_nChan = int(nidq_meta['nSavedChans']); 
+    nidq_nFileSamp = int(int(nidq_meta['fileSizeBytes'])/(2*nidq_nChan)); 
+    nidq_SampRate = int(nidq_meta['niSampRate']); 
+
+    nidq_data = np.memmap(nidq_binname, dtype='int16', 
+                        shape=(nidq_nFileSamp, nidq_nChan), offset=0, order='C'); 
+    nidq_sync = nidq_data[:,0].copy(); 
+    nidq_sHigh = np.where(nidq_sync>10000)[0]; 
+    nidq_sOFF = np.concatenate((nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]], [nidq_sHigh[-1]])); 
+    nidq_sON = np.concatenate(([nidq_sHigh[0]], nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]+1])); 
+
+    print('NIDQ syncON/OFF: ',len(nidq_sON),len(nidq_sOFF)); 
+
+    ### check lf.bin
+    lf_binname = ap_binname[:-6]+'lf.bin'; 
+
+    lf_meta = get_metaDict(lf_binname[:-3]+'meta'); 
+    lf_nChan = int(lf_meta['nSavedChans']); 
+    lf_nFileSamp = int(int(lf_meta['fileSizeBytes'])/(2*lf_nChan)); 
+    lf_imSampRate = int(lf_meta['imSampRate']);        
+
+    lf_data = np.memmap(lf_binname, dtype='int16', 
+                        shape=(lf_nFileSamp, lf_nChan), offset=0, mode='r',order='C'); 
+    lf_sync = lf_data[:,384].copy(); 
+    del lf_data; 
+
+    lf_sHigh = np.where(lf_sync==64)[0]; 
+    lf_sON = np.concatenate(([lf_sHigh[0]], lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]+1])); 
+    lf_sOFF = np.concatenate((lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]], [lf_sHigh[-1]])); 
+
+    if lf_sON[0]==0:
+        lf_sON = lf_sON[1:]; 
+        lf_sOFF = lf_sOFF[1:]; 
+
+    print('LF syncON/OFF: ',len(lf_sON),len(lf_sOFF)); 
+
+    ### check ap.bin
+    sON_valid_idx0 = len(nidq_sON) - len(lf_sON); 
+    nidq_sync_dur = (nidq_sOFF[-1]-nidq_sON[sON_valid_idx0])/nidq_SampRate; 
+
+    ap_meta = get_metaDict(ap_binname[:-3]+'meta'); 
+    ap_nChan = int(ap_meta['nSavedChans']); 
+    ap_nFileSamp = int(int(ap_meta['fileSizeBytes'])/(2*ap_nChan)); 
+    ap_imSampRate = int(ap_meta['imSampRate']); 
+
+    ap_data = np.memmap(ap_binname, dtype='int16', 
+                        shape=(ap_nFileSamp, ap_nChan), offset=0, mode='r',order='C'); 
+    ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*10),384]==64)[0]; 
+    ap_sONs = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
+    if ap_sONs[0]==0:
+        ap_sON = ap_sONs[1]; 
+    else:
+        ap_sON = ap_sONs[0]; 
+
+    ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*10):,384]==64)[0]; 
+    ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*10;    
+
+    imSampRate = (ap_sOFF - ap_sON) / nidq_sync_dur; 
+    syncON = ap_sON;     
+
+    sync_start_end = dict(); 
+    sync_start_end['nidq'] = np.array([nidq_sON[sON_valid_idx0], nidq_sOFF[-1]]); 
+    sync_start_end['ap_bin'] = np.array([ap_sON, ap_sOFF]); 
+    sync_start_end['lf_bin'] = np.array([lf_sON[0], lf_sOFF[-1]]); 
+
+    return sync_start_end; 
 
 
 
