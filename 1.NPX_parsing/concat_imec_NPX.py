@@ -368,14 +368,14 @@ def compute_syncONs(imec_datainfo, i):
     ap_data = np.memmap(ap_name, dtype='int16', 
                         shape=(ap_nFileSamp, ap_nChan), offset=0, order='C'); 
 
-    ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*last_seconds),384]==64)[0]; 
+    ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*10),384]==64)[0]; 
     ap_sONs = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
     if ap_sONs[0]==0:
         ap_sON = ap_sONs[1]; 
     else:
         ap_sON = ap_sONs[0]; 
 
-    ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*10):,384]==64)[0]; 
+    ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*last_seconds):,384]==64)[0]; 
     ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*last_seconds;    
 
 
