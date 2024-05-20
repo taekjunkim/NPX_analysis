@@ -324,7 +324,7 @@ def compute_syncONs(imec_datainfo, i):
     nidq_data = np.memmap(nidq_name, dtype='int16', 
                         shape=(nidq_nFileSamp, nidq_nChan), offset=0, order='C'); 
     
-    nidq_sync = nidq_data[:,0].copy(); 
+    nidq_sync = nidq_data[:,nidq_syncCH].copy(); 
     nidq_sHigh = np.where(nidq_sync>10000)[0]; 
     nidq_sOFF = np.concatenate((nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]], [nidq_sHigh[-1]])); 
     nidq_sON = np.concatenate(([nidq_sHigh[0]], nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]+1])); 
