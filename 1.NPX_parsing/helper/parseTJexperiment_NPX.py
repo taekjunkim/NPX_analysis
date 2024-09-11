@@ -27,7 +27,11 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     task_index_in_combine = int(app.tasknum_lineEdit.text()); 
     man_sorted = app.sorted_checkbox.isChecked(); 
 
-    sync_start_end = compute_syncONs(imec_filename); 
+    imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
+    if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy')==0:
+        sync_start_end = compute_syncONs(imec_filename); 
+    else:
+        sync_start_end = []; 
 
     id_all, spikets_all, chpos_all = get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end); 
 
@@ -443,15 +447,16 @@ def get_event_ts(bin_filename, markervals_str, sync_start_end):
 
     ### detect syncOn in the first 20 seconds
     niSampRate = int(metaDict['niSampRate']); 
-    #syncCh = int(metaDict['syncNiChan']); 
-    #syncONs = np.where(rawData[syncCh,:niSampRate*20]
-    #                  >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
-    #for p in range(10):
-    #    if syncONs[p+10]-syncONs[p]==10:
-    #        syncON = syncONs[p]; 
-    #        break; 
-
-    syncON = sync_start_end['nidq'][0]; 
+    try:
+        syncON = sync_start_end['nidq'][0]; 
+    except:
+        syncCh = int(metaDict['syncNiChan']); 
+        syncONs = np.where(rawData[syncCh,:niSampRate*20]
+                        >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
+        for p in range(10):
+            if syncONs[p+10]-syncONs[p]==10:
+                syncON = syncONs[p]; 
+                break; 
 
     ### read digit signal
     digitCh = np.shape(rawData)[0]-1;   # the last channel     
