@@ -28,11 +28,21 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     man_sorted = app.sorted_checkbox.isChecked(); 
 
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
-    if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy')==0:
-        sync_start_end = compute_syncONs(imec_filename); 
-    else:
-        sync_start_end = []; 
 
+    if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
+        imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item();         
+        sync_start_end = dict(); 
+        try: 
+            sync_start_end['nidq'] = [imec_info['nidq: syncON'][task_index_in_combine], imec_info['nidq: syncOFF'][task_index_in_combine]]; 
+            sync_start_end['ap_bin'] = [imec_info['ap: syncON'][task_index_in_combine], imec_info['ap: syncOFF'][task_index_in_combine]]; 
+            sync_start_end['lf_bin'] = [imec_info['lf: syncON'][task_index_in_combine], imec_info['lf: syncOFF'][task_index_in_combine]];  
+        except:
+            sync_start_end['nidq'] = [imec_info['nidq_syncON'][task_index_in_combine], imec_info['nidq_syncOFF'][task_index_in_combine]]; 
+            sync_start_end['ap_bin'] = [imec_info['ap_syncON'][task_index_in_combine], imec_info['ap_syncOFF'][task_index_in_combine]]; 
+            sync_start_end['lf_bin'] = [imec_info['lf_syncON'][task_index_in_combine], imec_info['lf_syncOFF'][task_index_in_combine]];  
+    else:
+        sync_start_end = compute_syncONs(imec_filename); 
+    
     id_all, spikets_all, chpos_all = get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end); 
 
     if app.sua_radiobutton.isChecked() == True:
@@ -266,7 +276,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             for j in np.arange(numNeurons):
                 mySpikes = np.array([]);
                 if stimStructs[sIndex]['pdOff'] != []:
-                    spikeIndices = np.where((spikets[j] >= (stimOnTime-prevTime)) & 
+                    spikeIndices = np.where((spikets[j] >= (stimStructs[sIndex]['pdOn'][inst]-prevTime)) & 
                                             (spikets[j] <= (stimStructs[sIndex]['pdOff'][inst]+postTime)))[0];
                 else:
                     spikeIndices = np.where((spikets[j] >= (stimOnTime-prevTime)) & 
@@ -447,16 +457,15 @@ def get_event_ts(bin_filename, markervals_str, sync_start_end):
 
     ### detect syncOn in the first 20 seconds
     niSampRate = int(metaDict['niSampRate']); 
-    try:
-        syncON = sync_start_end['nidq'][0]; 
-    except:
-        syncCh = int(metaDict['syncNiChan']); 
-        syncONs = np.where(rawData[syncCh,:niSampRate*20]
-                        >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
-        for p in range(10):
-            if syncONs[p+10]-syncONs[p]==10:
-                syncON = syncONs[p]; 
-                break; 
+    #syncCh = int(metaDict['syncNiChan']); 
+    #syncONs = np.where(rawData[syncCh,:niSampRate*20]
+    #                  >np.max(rawData[syncCh,:niSampRate*20])*0.5)[0];    
+    #for p in range(10):
+    #    if syncONs[p+10]-syncONs[p]==10:
+    #        syncON = syncONs[p]; 
+    #        break; 
+
+    syncON = sync_start_end['nidq'][0]; 
 
     ### read digit signal
     digitCh = np.shape(rawData)[0]-1;   # the last channel     
@@ -465,6 +474,7 @@ def get_event_ts(bin_filename, markervals_str, sync_start_end):
 
     ### time (ms) with respect to syncON
     markerts = (np.where(digit_diff==2)[0] + 1 - syncON)/niSampRate; 
+    """
     pdOnTS_raw = (np.where(digit_diff==1)[0] + 1 - syncON)/niSampRate; 
     pdOffTS_raw = (np.where(digit_diff==-1)[0] + 1 - syncON)/niSampRate; 
 
@@ -476,7 +486,7 @@ def get_event_ts(bin_filename, markervals_str, sync_start_end):
     pdOff_dist = pdOffTS_raw[1:] - pdOffTS_raw[:-1];
     pdOffTS = np.append(pdOffTS_raw[np.where(pdOff_dist>0.02)[0]],
                         pdOffTS_raw[-1]); 
-
+    """
     """
     ### this is for photodiode generating continuous pdOn
     pdOnTS = pdOnTS_raw; 
@@ -534,19 +544,32 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end
 
     if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
         imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item(); 
-        imSampRate = imec_info['ap: imSampRate'][task_index_in_combine]; 
+        try:
+            imSampRate = imec_info['ap: imSampRate'][task_index_in_combine]; 
+            #rawdata = []; #AC commented this out
+            #binname = []; 
+            syncON = imec_info['ap: firstSamp'][task_index_in_combine] + imec_info['ap: syncON'][task_index_in_combine]; 
 
-        rawdata = []; 
-        binname = []; 
-        syncON = imec_info['ap: firstSamp'][task_index_in_combine] + imec_info['ap: syncON'][task_index_in_combine]; 
+            if 'ap: syncOFF' in imec_info.keys():
+                syncDur_nidq = imec_info['nidq: syncOFF'][task_index_in_combine] - imec_info['nidq: syncON'][task_index_in_combine]; 
+                syncDur_nidq_sec = syncDur_nidq / imec_info['nidq: SampRate'][task_index_in_combine]; 
 
-        if 'ap: syncOFF' in imec_info.keys():
-            syncDur_nidq = imec_info['nidq: syncOFF'][task_index_in_combine] - imec_info['nidq: syncON'][task_index_in_combine]; 
-            syncDur_nidq_sec = syncDur_nidq / imec_info['nidq: SampRate'][task_index_in_combine]; 
+                # adjusted imSampRate
+                syncDur_ap = imec_info['ap: syncOFF'][task_index_in_combine] - imec_info['ap: syncON'][task_index_in_combine]; 
+                imSampRate = syncDur_ap / syncDur_nidq_sec; 
+        except:
+            imSampRate = imec_info['ap_imSampRate'][task_index_in_combine]; 
+            #rawdata = []; #AC commented this out
+            #binname = []; 
+            syncON = imec_info['ap_firstSamp'][task_index_in_combine] + imec_info['ap_syncON'][task_index_in_combine]; 
 
-            # adjusted imSampRate
-            syncDur_ap = imec_info['ap: syncOFF'][task_index_in_combine] - imec_info['ap: syncON'][task_index_in_combine]; 
-            imSampRate = syncDur_ap / syncDur_nidq_sec; 
+            if 'ap_syncOFF' in imec_info.keys():
+                syncDur_nidq = imec_info['nidq_syncOFF'][task_index_in_combine] - imec_info['nidq_syncON'][task_index_in_combine]; 
+                syncDur_nidq_sec = syncDur_nidq / imec_info['nidq_SampRate'][task_index_in_combine]; 
+
+                # adjusted imSampRate
+                syncDur_ap = imec_info['ap_syncOFF'][task_index_in_combine] - imec_info['ap_syncON'][task_index_in_combine]; 
+                imSampRate = syncDur_ap / syncDur_nidq_sec; 
 
     else:
         ap_binname = imec_filename; 
@@ -643,7 +666,7 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end
                 spikets_all['mua'].append(spk_ts);    
                 chpos_all['mua'].append(chpos); 
     
-    del rawdata, binname; 
+    #del rawdata, binname; #AC commented this out
 
     # timestamps in seconds    
     return id_all, spikets_all, chpos_all; 
