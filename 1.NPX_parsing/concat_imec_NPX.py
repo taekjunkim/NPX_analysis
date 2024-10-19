@@ -168,7 +168,7 @@ class MainWindow(QMainWindow):
             lf_chunk_size = int(np.ceil(lf_nFileSamp/1000)); 
 
             f_ap = open(new_ap_name, 'a'); 
-            f_lf = open(new_lf_name, 'a');
+            f_lf = open(new_lf_name, 'a'); 
 
             while chunk<1000:
 

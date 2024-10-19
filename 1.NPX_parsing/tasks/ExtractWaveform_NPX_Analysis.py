@@ -45,9 +45,9 @@ def main(app):
         if ci_df['group'][idx]=='good':
 
             if 'cluster_id' in ci_df.columns:
-                cid = ci_df['cluster_id'][idx];
+                cid = ci_df['cluster_id'][idx]; 
             else:
-                cid = ci_df['id'][idx];
+                cid = ci_df['id'][idx]; 
 
             # We get the waveforms of the cluster.        
             waveforms = model.get_cluster_spike_waveforms(cid); 
