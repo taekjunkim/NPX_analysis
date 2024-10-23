@@ -79,7 +79,15 @@ def main(app):
     experiment['StimResp'] = StimResp;
     experiment['mResp'] = mResp;    
 
-    depth = np.array(experiment['chpos_sua'])[:,1]; 
+    if app.sua_radiobutton.isChecked() == True:
+        depth = np.array(experiment['chpos_sua'])[:,1]; 
+    elif app.mua_radiobutton.isChecked() == True:
+        depth = np.array(experiment['chpos_mua'])[:,1]; 
+    elif app.all_radiobutton.isChecked() == True:
+        depth_sua = np.array(experiment['chpos_sua'])[:,1]; 
+        depth_mua = np.array(experiment['chpos_mua'])[:,1]; 
+        depth = np.vstack((depth_sua, depth_mua)); 
+ 
     depth_order = depth.argsort();   # from the tip to the top
 
     ### r2er_n2n analysis
@@ -147,7 +155,7 @@ def main(app):
     rMtx[np.isnan(rMtx)] = 0; 
 
     neg_r = np.where(rMtx<0); 
-    plt.imshow(rMtx,origin='lower'); 
+    plt.imshow(rMtx,origin='lower',cmap='bwr',vmin=-1,vmax=1);  
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')
     plt.title('ShapeResp: correlation'); 
 
@@ -178,7 +186,7 @@ def main(app):
     r_er_Mtx[np.isnan(r_er_Mtx)] = 0; 
 
     r_er_Mtx[neg_r[0],neg_r[1]] = -1*r_er_Mtx[neg_r[0],neg_r[1]]; 
-    plt.imshow(r_er_Mtx,origin='lower'); 
+    plt.imshow(r_er_Mtx,origin='lower',cmap='bwr',vmin=-1,vmax=1);   
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')
     plt.title("ShapeResp: r2er"); 
 
@@ -210,7 +218,7 @@ def main(app):
     r_Mtx[np.isnan(r_Mtx)] = 0; 
 
     r_Mtx[neg_r[0],neg_r[1]] = -1*r_Mtx[neg_r[0],neg_r[1]]; 
-    plt.imshow(r_Mtx,origin='lower'); 
+    plt.imshow(r_Mtx,origin='lower',cmap='bwr',vmin=-1,vmax=1);   
     plt.colorbar(fraction=0.046, pad=0.04,label='Correlation coefficient (r)')
     plt.title('ShapeResp: r'); 
 

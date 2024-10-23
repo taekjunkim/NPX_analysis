@@ -495,8 +495,8 @@ def get_event_ts(bin_filename, markervals_str, sync_start_end):
 
     ### photodiode based on analog signal
     pd_signal = rawData[4, :]; 
-    pd_High = np.where(pd_signal > np.max(pd_signal)-500)[0]; 
-    pdOnTS = np.concatenate(([pd_High[0]], pd_High[np.where(np.diff(pd_High)>10)[0]+1]));     
+    pd_High = np.where(pd_signal > np.max(pd_signal)*0.5)[0]; 
+    pdOnTS = np.concatenate(([pd_High[0]], pd_High[np.where(np.diff(pd_High)>25*5)[0]+1]));     
     pdOffTS = np.concatenate((pd_High[np.where(np.diff(pd_High)>10)[0]], [pd_High[-1]])); 
     pdOnTS = (pdOnTS - syncON)/niSampRate; 
     pdOffTS = (pdOffTS - syncON)/niSampRate; 

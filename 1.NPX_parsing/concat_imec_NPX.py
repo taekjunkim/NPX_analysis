@@ -189,7 +189,7 @@ class MainWindow(QMainWindow):
                     f_ap.close(); 
                     f_lf.close(); 
                     f_ap = open(new_ap_name, 'a'); 
-                    f_lf = open(new_lf_name, 'a');
+                    f_lf = open(new_lf_name, 'a'); 
                 chunk += 1; 
 
             f_ap.close(); 
