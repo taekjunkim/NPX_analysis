@@ -88,7 +88,7 @@ def main(app):
     elif app.all_radiobutton.isChecked() == True:
         depth_sua = np.array(experiment['chpos_sua'])[:,1]; 
         depth_mua = np.array(experiment['chpos_mua'])[:,1]; 
-        depth = np.vstack((depth_sua, depth_mua)); 
+        depth = np.concatenate((depth_sua, depth_mua)); 
  
     depth_order = depth.argsort();   # from the tip to the top
     
