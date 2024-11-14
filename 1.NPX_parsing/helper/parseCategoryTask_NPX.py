@@ -1057,6 +1057,14 @@ def compute_syncONs(imec_filename):
     nidq_sON = np.concatenate(([nidq_sHigh[0]], nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]+1])); 
 
     print('NIDQ syncON/OFF: ',len(nidq_sON),len(nidq_sOFF)); 
+    nidq_sync_good = np.array([0, 0]); 
+    if nidq_sON[0] > np.max(np.diff(nidq_sHigh)): 
+        nidq_sync_good[0] = 1; 
+        print('NIDQ first syncON is OK'); 
+    if nidq_nFileSamp - nidq_sOFF[-1] > np.max(np.diff(nidq_sHigh)): 
+        nidq_sync_good[1] = 1;         
+        print('NIDQ last syncOFF is OK'); 
+
 
     ### check lf.bin
     lf_binname = ap_binname[:-6]+'lf.bin'; 
@@ -1080,9 +1088,21 @@ def compute_syncONs(imec_filename):
         lf_sOFF = lf_sOFF[1:]; 
 
     print('LF syncON/OFF: ',len(lf_sON),len(lf_sOFF)); 
+    lf_sync_good = np.array([0, 0]);     
+    if lf_sON[0] > np.max(np.diff(lf_sHigh)): 
+        lf_sync_good[0] = 1;     
+        print('LF first syncON is OK'); 
+    if lf_nFileSamp - lf_sOFF[-1] > np.max(np.diff(lf_sHigh)): 
+        lf_sync_good[1] = 1;             
+        print('LF last syncOFF is OK'); 
+
 
     ### check ap.bin
     sON_valid_idx0 = len(nidq_sON) - len(lf_sON); 
+    if sON_valid_idx0 < 0:   # this is sync error. weird signal in the middle
+        if (np.min(nidq_sync_good)==1):
+            sON_valid_idx0 = 0; 
+
     nidq_sync_dur = (nidq_sOFF[-1]-nidq_sON[sON_valid_idx0])/nidq_SampRate; 
 
     last_seconds = (lf_nFileSamp-lf_sOFF[-1])/lf_imSampRate; 
