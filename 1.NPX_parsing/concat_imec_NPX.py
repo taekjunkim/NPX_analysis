@@ -135,7 +135,7 @@ class MainWindow(QMainWindow):
             imec_datainfo['ap: syncOFF'].append(sync_start_end['ap_bin'][1]); 
             imec_datainfo['lf: syncOFF'].append(sync_start_end['lf_bin'][1]);                                      
 
-
+            """
             # get nidq_data
             nidq_name = imec_datainfo['nidq: fname'][i]; 
             nidq_nFileSamp = imec_datainfo['nidq: nFileSamp'][i]; 
@@ -160,7 +160,6 @@ class MainWindow(QMainWindow):
             lf_imSampRate = imec_datainfo['lf: imSampRate'][i];         
             lf_data = np.memmap(lf_name, dtype='int16', 
                                 shape=(lf_nFileSamp, lf_nChan), offset=0, order='C');                                           
-
 
             # write ap_data, lf_data
             chunk = 0; 
@@ -195,9 +194,9 @@ class MainWindow(QMainWindow):
             f_ap.close(); 
             f_lf.close(); 
 
-
-        # remove memmap
-        del nidq_data, ap_data, lf_data 
+            # remove memmap
+            del nidq_data, ap_data, lf_data 
+            """
 
         np.save(datainfo_name, imec_datainfo); 
         print('imec_datainfo was saved'); 
