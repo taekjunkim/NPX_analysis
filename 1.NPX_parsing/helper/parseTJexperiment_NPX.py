@@ -738,8 +738,15 @@ def compute_syncONs(imec_filename):
     ### check ap.bin
     sON_valid_idx0 = len(nidq_sON) - len(lf_sON); 
     if sON_valid_idx0 < 0:   # this is sync error. weird signal in the middle
-        if (np.min(nidq_sync_good)==1):
+        if (np.min(nidq_sync_good)==1) and (np.min(lf_sync_good)==1):
             sON_valid_idx0 = 0; 
+        else:
+            sync_start_end = dict(); 
+            sync_start_end['nidq'] = np.array([nidq_sON[0], nidq_sOFF[-1]]); 
+            sync_start_end['ap_bin'] = np.array([np.nan, ap_sOFF]); 
+            sync_start_end['lf_bin'] = np.array([np.nan, lf_sOFF[-1]]); 
+            print('Found sync error!')
+            return sync_start_end; 
 
     nidq_sync_dur = (nidq_sOFF[-1]-nidq_sON[sON_valid_idx0])/nidq_SampRate; 
 
