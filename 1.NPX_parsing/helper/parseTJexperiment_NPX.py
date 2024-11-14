@@ -30,7 +30,10 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
     if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
-        imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item();         
+        try:
+            imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item();         
+        except:
+            imec_info = np.load(imec_dataFolder+'../info/imec_datainfo.npy', allow_pickle=True).item();         
         sync_start_end = dict(); 
         try: 
             sync_start_end['nidq'] = [imec_info['nidq: syncON'][task_index_in_combine], imec_info['nidq: syncOFF'][task_index_in_combine]]; 
@@ -102,7 +105,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
         counter += 2; 
 
     ### Prepare StimStructs
-    stimStructs = [];
+    stimStructs = []; 
     for i in np.arange(numConds):
         stimStructs.append(dict()); 
         stimStructs[i]['numInstances'] = 0;
@@ -120,16 +123,16 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
         print('The first start_iti code is offset');
     stimOns = np.where(markervals==parseParams['stimOnCode'])[0];        
     
-    error_indices = [];
-    completedITIs = 0;
+    error_indices = []; 
+    completedITIs = 0; 
     ### Get stimuli
     for i in np.arange(len(stimITIOns)-1): # the file should end with 
                                            # a startITI that we don't care about    
         if stimITIOns[i] < counter:
             continue;
 
-        index = stimITIOns[i] + 1;
-        next_code = markervals[index];
+        index = stimITIOns[i] + 1; 
+        next_code = markervals[index]; 
 
         if next_code == parseParams['endITICode']:
             experiment['iti_start'].append(markerts[stimITIOns[i]]);
@@ -142,7 +145,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 print('continuing from next start_iti');                
                 error_indices.append(index);           
                 continue;
-            index = index + 2;
+            index = index + 2; 
             next_code = markervals[index];
 
             if next_code == parseParams['endITICode']:
@@ -161,9 +164,9 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             error_indices.append(index);           
             continue;
 
-        next_code2 = markervals[index+1];
+        next_code2 = markervals[index+1]; 
         if next_code2 == parseParams['fixAcquiredCode']:
-            pass;
+            pass; 
         elif next_code2 == parseParams['UninitiatedTrialCode']:
             if markervals[index+2] != parseParams['startITICode']:
                 error_indices.append(index+2);
@@ -201,17 +204,17 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                     continue;
             elif ((markervals[ndex+1+optionalCode] >= parseParams['stimIDOffset']) 
                   and (markervals[ndex+1+optionalCode] < parseParams['stimRotOffset'])): 
-                stimIDCodeToStore = markervals[ndex+1+optionalCode];
+                stimIDCodeToStore = markervals[ndex+1+optionalCode]; 
             else:
                 print('Found '+str(markervals[ndex+1])+' as a stimulus code at stim time '
-                      +str(markerts[ndex+1+optionalCode])+' at index '+str(ndex+1+optionalCode));
+                      +str(markerts[ndex+1+optionalCode])+' at index '+str(ndex+1+optionalCode)); 
                 print('continuing from next start_iti');                            
-                error_indices.append(ndex+optionalCode+1);
-                trialCode = parseParams['codeError'];
+                error_indices.append(ndex+optionalCode+1); 
+                trialCode = parseParams['codeError']; 
                 continue;                
 
             ## next code is either fixlost or stimOn
-            codeIndex = ndex + 2 + optionalCode;
+            codeIndex = ndex + 2 + optionalCode; 
             code = markervals[codeIndex];
             if code == parseParams['fixLost']:
                 if hasValidBreakFix(codeIndex,markervals,parseParams):
@@ -220,14 +223,14 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             elif code != parseParams['stimOnCode']:          
                 print('Missing StimOn or fixlost code, found '+str(code)+' at '+str(codeIndex))
                 print('continuing from next start_iti');                                        
-                error_indices.append(codeIndex);
-                trialCode = parseParams['codeError'];
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError']; 
                 continue;                
             else:
-                stimOnTime = markerts[codeIndex];
+                stimOnTime = markerts[codeIndex]; 
                 
             ## next code is either fixlost or stimOff
-            codeIndex = ndex + 3 + optionalCode;
+            codeIndex = ndex + 3 + optionalCode; 
             code = markervals[codeIndex];
             if code == parseParams['fixLost']:
                 if hasValidBreakFix(codeIndex,markervals,parseParams):
@@ -240,7 +243,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 trialCode = parseParams['codeError'];
                 continue;                
             else:
-                stimOffTime = markerts[codeIndex];
+                stimOffTime = markerts[codeIndex]; 
                 
             ## having made it here, we can now call this a completed stimulus presentation and record the results                
             sIndex = stimIDCodeToStore - parseParams['stimIDOffset']; 
@@ -259,7 +262,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             stimStructs[sIndex]['trial_num'].append(i);                           
 
             ## now find the pdiode events associated with
-            pdOnsAfter = np.where(pdOnTS > stimOnTime)[0];
+            pdOnsAfter = np.where(pdOnTS > stimOnTime)[0]; 
             if len(pdOnsAfter)==0:
                 print('Error, did not find a photodiode on code after stimon at time '+str(stimOnTime));
                 print('Ignoring... Continuing');
@@ -543,7 +546,10 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
     if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
-        imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item(); 
+        try:
+            imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item(); 
+        except:
+            imec_info = np.load(imec_dataFolder+'../info/imec_datainfo.npy', allow_pickle=True).item(); 
         try:
             imSampRate = imec_info['ap: imSampRate'][task_index_in_combine]; 
             #rawdata = []; #AC commented this out
@@ -745,7 +751,7 @@ def compute_syncONs(imec_filename):
             sync_start_end['nidq'] = np.array([nidq_sON[0], nidq_sOFF[-1]]); 
             sync_start_end['ap_bin'] = np.array([np.nan, ap_sOFF]); 
             sync_start_end['lf_bin'] = np.array([np.nan, lf_sOFF[-1]]); 
-            print('Found sync error!')
+            print('Found sync error!'); 
             return sync_start_end; 
 
     nidq_sync_dur = (nidq_sOFF[-1]-nidq_sON[sON_valid_idx0])/nidq_SampRate; 

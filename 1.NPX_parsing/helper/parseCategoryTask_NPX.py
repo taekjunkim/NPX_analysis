@@ -27,7 +27,10 @@ def main(bin_filename, dat_filename, prevTime, maxNumTrials, imec_filename, app)
     man_sorted = app.sorted_checkbox.isChecked(); 
 
     if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
-        imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item();         
+        try:
+            imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item();         
+        except:
+            imec_info = np.load(imec_dataFolder+'../info/imec_datainfo.npy', allow_pickle=True).item();         
         sync_start_end = dict(); 
         try: 
             sync_start_end['nidq'] = [imec_info['nidq: syncON'][task_index_in_combine], imec_info['nidq: syncOFF'][task_index_in_combine]]; 
@@ -858,7 +861,10 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted):
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
     if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
-        imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item(); 
+        try:
+            imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item(); 
+        except:
+            imec_info = np.load(imec_dataFolder+'../info/imec_datainfo.npy', allow_pickle=True).item(); 
         imSampRate = imec_info['ap: imSampRate'][task_index_in_combine]; 
 
         rawdata = []; 
