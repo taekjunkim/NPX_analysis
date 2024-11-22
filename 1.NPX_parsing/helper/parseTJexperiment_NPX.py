@@ -325,7 +325,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
     experiment['stimStructs'] = stimStructs;                        
     experiment['errors'] = error_indices; 
     
-    return experiment;
+    return experiment; 
 
 #%% hasValidBreakFix
 def hasValidBreakFix(ndex, markervals, parseParams):
