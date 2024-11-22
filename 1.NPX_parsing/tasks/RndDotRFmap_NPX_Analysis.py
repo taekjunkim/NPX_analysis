@@ -159,7 +159,10 @@ def main(app):
         spon_norm = spon/np.max(abs(RFmap)); 
 
         maxPos = np.where(RFmap==np.max(RFmap)); 
-        maxPos = [maxPos[0][0],maxPos[1][0]]; 
+        if len(maxPos[0])>0:
+            maxPos = [maxPos[0][0],maxPos[1][0]]; 
+        else:
+            maxPos = [xRange[0]+3, yRange[0]+3]; 
         #if len(maxPos[0])>1:
         #    maxPos = maxPos[0]
 
