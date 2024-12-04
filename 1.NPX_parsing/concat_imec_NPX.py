@@ -325,8 +325,16 @@ def compute_syncONs(imec_datainfo, i):
     
     nidq_sync = nidq_data[:,nidq_syncCH].copy(); 
     nidq_sHigh = np.where(nidq_sync>10000)[0]; 
-    nidq_sOFF = np.concatenate((nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]], [nidq_sHigh[-1]])); 
-    nidq_sON = np.concatenate(([nidq_sHigh[0]], nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]+1])); 
+    nidq_sOFF_pre = np.concatenate((nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]], [nidq_sHigh[-1]])); 
+    nidq_sON_pre = np.concatenate(([nidq_sHigh[0]], nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]+1])); 
+
+    nidq_sOFF = [];   nidq_sON = []; 
+    for t in np.arange(len(nidq_sOFF_pre)):
+        if nidq_sOFF_pre[t]!=nidq_sON_pre[i]:
+            nidq_sOFF.append(nidq_sOFF_pre[t]); 
+            nidq_sON.append(nidq_sON_pre[t]); 
+    nidq_sOFF = np.array(nidq_sOFF); 
+    nidq_sON = np.array(nidq_sON); 
 
     print('NIDQ syncON/OFF: ',len(nidq_sON),len(nidq_sOFF)); 
 
@@ -343,8 +351,16 @@ def compute_syncONs(imec_datainfo, i):
     del lf_data; 
 
     lf_sHigh = np.where(lf_sync==64)[0]; 
-    lf_sON = np.concatenate(([lf_sHigh[0]], lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]+1])); 
-    lf_sOFF = np.concatenate((lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]], [lf_sHigh[-1]])); 
+    lf_sON_pre = np.concatenate(([lf_sHigh[0]], lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]+1])); 
+    lf_sOFF_pre = np.concatenate((lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]], [lf_sHigh[-1]])); 
+
+    lf_sOFF = [];   lf_sON = []; 
+    for t in np.arange(len(lf_sOFF_pre)):
+        if lf_sOFF_pre[t]!=lf_sON_pre[i]:
+            lf_sOFF.append(lf_sOFF_pre[t]); 
+            lf_sON.append(lf_sON_pre[t]); 
+    lf_sOFF = np.array(lf_sOFF); 
+    lf_sON = np.array(lf_sON); 
 
     if lf_sON[0]==0:
         lf_sON = lf_sON[1:]; 
@@ -368,15 +384,25 @@ def compute_syncONs(imec_datainfo, i):
                         shape=(ap_nFileSamp, ap_nChan), offset=0, order='C'); 
 
     ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*10),384]==64)[0]; 
-    ap_sONs = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
+    ap_sONs_pre = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
+    ap_sONs = []; 
+    for t in np.arange(len(ap_sONs_pre)):
+        if ap_data[ap_sONs_pre[t],384]==ap_data[ap_sONs_pre[t]+1,384]:
+            ap_sONs.append(ap_sONs_pre[t]); 
+    ap_sONs = np.array(ap_sONs); 
+
     if ap_sONs[0]==0:
         ap_sON = ap_sONs[1]; 
     else:
         ap_sON = ap_sONs[0]; 
 
     ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*last_seconds):,384]==64)[0]; 
-    ap_sOFF = ap_sHigh_end[-1] + ap_nFileSamp - ap_imSampRate*last_seconds;    
-
+    ap_sOFFs_pre = ap_sHigh_end + ap_nFileSamp - ap_imSampRate*last_seconds;    
+    ap_sOFFs = []; 
+    for t in np.arange(len(ap_sOFFs_pre)):
+        if ap_data[ap_sOFFs_pre[t],384]==ap_data[ap_sOFFs_pre[t]-1,384]:
+            ap_sOFFs.append(ap_sOFFs_pre[t]); 
+    ap_sOFF = ap_sOFFs[-1]; 
 
     sync_start_end = dict(); 
     sync_start_end['nidq'] = np.array([nidq_sON[sON_valid_idx0], nidq_sOFF[-1]]); 
