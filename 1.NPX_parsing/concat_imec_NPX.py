@@ -387,7 +387,7 @@ def compute_syncONs(imec_datainfo, i):
     ap_sONs_pre = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
     ap_sONs = []; 
     for t in np.arange(len(ap_sONs_pre)):
-        if ap_data[ap_sONs_pre[t],384]==ap_data[ap_sONs_pre[t]+1,384]:
+        if np.min(ap_data[ap_sONs_pre[t]:ap_sONs_pre[t]+30,384])>0:
             ap_sONs.append(ap_sONs_pre[t]); 
     ap_sONs = np.array(ap_sONs); 
 
@@ -400,7 +400,7 @@ def compute_syncONs(imec_datainfo, i):
     ap_sOFFs_pre = ap_sHigh_end + ap_nFileSamp - ap_imSampRate*last_seconds;    
     ap_sOFFs = []; 
     for t in np.arange(len(ap_sOFFs_pre)):
-        if ap_data[ap_sOFFs_pre[t],384]==ap_data[ap_sOFFs_pre[t]-1,384]:
+        if np.min(ap_data[ap_sOFFs_pre[t]-30:ap_sOFFs_pre[t],384])>0:
             ap_sOFFs.append(ap_sOFFs_pre[t]); 
     ap_sOFF = ap_sOFFs[-1]; 
 
