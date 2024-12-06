@@ -349,7 +349,7 @@ def compute_syncONs(imec_datainfo, i):
 
     lf_sync = lf_data[:,384].copy(); 
     del lf_data; 
-
+    
     lf_sHigh = np.where(lf_sync==64)[0]; 
     lf_sON_pre = np.concatenate(([lf_sHigh[0]], lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]+1])); 
     lf_sOFF_pre = np.concatenate((lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]], [lf_sHigh[-1]])); 

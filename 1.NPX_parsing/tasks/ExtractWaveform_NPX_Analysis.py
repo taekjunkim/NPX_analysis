@@ -51,11 +51,13 @@ def main(app):
 
             # We get the waveforms of the cluster.        
             waveforms = model.get_cluster_spike_waveforms(cid); 
-            n_spikes, n_samples, n_channels_loc = waveforms.shape; 
-            # We get the channel ids where the waveforms are located.
-            channel_ids = model.get_cluster_channels(cid); 
-
-            wf_now = np.mean(waveforms[:,:,0],axis=0);   # mean_waveform from the best channel
+            try:
+                n_spikes, n_samples, n_channels_loc = waveforms.shape; 
+                # We get the channel ids where the waveforms are located.
+                channel_ids = model.get_cluster_channels(cid); 
+                wf_now = np.mean(waveforms[:,:,0],axis=0);   # mean_waveform from the best channel
+            except:
+                wf_now = np.zeros((82,)); 
         
             mean_wf.append(dict());     
             mean_wf[-1]['cluster_id'] = cid; 

@@ -61,15 +61,16 @@ class MainWindow(QMainWindow):
         self.combobox.addItems(['DriftingGrating']); 
         self.combobox.addItems(['ObjSurfMotion']);         
         self.combobox.addItems(['ExtractWaveform']);         
-        self.combobox.addItems(['Kiani_gaze']);                        
+        #self.combobox.addItems(['Kiani_gaze']);                        
         self.combobox.addItems(['KS_DriftMap']);                 
         self.combobox.addItems(['LFP_power']);         
         self.combobox.addItems(['PositionInvariance']);  
         self.combobox.addItems(['RndDotRFmap']);         
-        self.combobox.addItems(['SaliencyPS']);          
-        self.combobox.addItems(['ShapeTexture']);                  
-        self.combobox.addItems(['StimDuration']);                                         
-        self.combobox.addItems(['SurroundMap']);                                                 
+        #self.combobox.addItems(['SaliencyPS']);          
+        self.combobox.addItems(['ShapeSegmentation']);                          
+        #self.combobox.addItems(['ShapeTexture']);                  
+        #self.combobox.addItems(['StimDuration']);                                         
+        #self.combobox.addItems(['SurroundMap']);                                                 
         self.combobox.addItems(['Texture3Ver']);                               
         self.combobox.addItems(['TextureFlow']);                                                                 
 
@@ -179,6 +180,9 @@ class MainWindow(QMainWindow):
         elif self.combobox.currentText() == 'ClutterStim':      
             from tasks import ClutterStim_NPX_Analysis as CS_NPX; 
             CS_NPX.main(self); 
+        elif self.combobox.currentText() == 'ShapeSegmentation':              
+            from tasks import ShapeSegmentation_NPX_analysis as SS_NPX; 
+            SS_NPX.main(self);         
         elif self.combobox.currentText() == 'ShapeTexture':      
             from tasks import ShapeTexture_NPX_Analysis as ST_NPX; 
             ST_NPX.main(self);         

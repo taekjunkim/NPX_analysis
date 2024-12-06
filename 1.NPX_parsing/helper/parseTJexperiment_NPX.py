@@ -29,7 +29,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
 
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
-    if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
+    if  (os.path.exists(imec_dataFolder+'../info/imec_datainfo.npy')) or (os.path.exists(imec_dataFolder+'info/imec_datainfo.npy')):
         try:
             imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item();         
         except:
@@ -546,7 +546,7 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end
 
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
-    if os.path.exists(imec_dataFolder+'info/imec_datainfo.npy'):
+    if (os.path.exists(imec_dataFolder+'../info/imec_datainfo.npy')) or (os.path.exists(imec_dataFolder+'info/imec_datainfo.npy')):
         try:
             imec_info = np.load(imec_dataFolder+'info/imec_datainfo.npy', allow_pickle=True).item(); 
         except:
