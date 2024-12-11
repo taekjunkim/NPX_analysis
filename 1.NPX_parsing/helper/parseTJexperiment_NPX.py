@@ -702,16 +702,19 @@ def compute_syncONs(imec_filename):
     nidq_sOFF_pre = np.concatenate((nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]], [nidq_sHigh[-1]])); 
     nidq_sON_pre = np.concatenate(([nidq_sHigh[0]], nidq_sHigh[np.where(np.diff(nidq_sHigh)>10)[0]+1])); 
 
-    nidq_sOFF = [];   nidq_sON = []; 
-    for t in np.arange(len(nidq_sOFF_pre)):
-        if nidq_sOFF_pre[t]!=nidq_sON_pre[i]:
-            nidq_sOFF.append(nidq_sOFF_pre[t]); 
+    nidq_sON = []; 
+    for t in np.arange(len(nidq_sON_pre)):
+        if np.min(nidq_data[nidq_sON_pre[t]:nidq_sON_pre[t]+25,nidq_syncCH])>10000:
             nidq_sON.append(nidq_sON_pre[t]); 
-    nidq_sOFF = np.array(nidq_sOFF); 
     nidq_sON = np.array(nidq_sON); 
-
+    nidq_sOFF = []; 
+    for t in np.arange(len(nidq_sOFF_pre)):
+        if np.min(nidq_data[nidq_sOFF_pre[t]-25:nidq_sOFF_pre[t],nidq_syncCH])>10000:
+            nidq_sOFF.append(nidq_sOFF_pre[t]); 
+    nidq_sOFF = np.array(nidq_sOFF); 
 
     print('NIDQ syncON/OFF: ',len(nidq_sON),len(nidq_sOFF)); 
+
     nidq_sync_good = np.array([0, 0]); 
     if nidq_sON[0] > np.max(np.diff(nidq_sHigh)): 
         nidq_sync_good[0] = 1; 
@@ -737,13 +740,16 @@ def compute_syncONs(imec_filename):
     lf_sON_pre = np.concatenate(([lf_sHigh[0]], lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]+1])); 
     lf_sOFF_pre = np.concatenate((lf_sHigh[np.where(np.diff(lf_sHigh)>10)[0]], [lf_sHigh[-1]])); 
 
-    lf_sOFF = [];   lf_sON = []; 
-    for t in np.arange(len(lf_sOFF_pre)):
-        if lf_sOFF_pre[t]!=lf_sON_pre[i]:
-            lf_sOFF.append(lf_sOFF_pre[t]); 
+    lf_sON = []; 
+    for t in np.arange(len(lf_sON_pre)):
+        if np.min(lf_sync[lf_sON_pre[t]:lf_sON_pre[t]+5])>0:
             lf_sON.append(lf_sON_pre[t]); 
-    lf_sOFF = np.array(lf_sOFF); 
     lf_sON = np.array(lf_sON); 
+    lf_sOFF = []; 
+    for t in np.arange(len(lf_sOFF_pre)):
+        if np.min(lf_sync[lf_sOFF_pre[t]-5:lf_sOFF_pre[t]])>0:
+            lf_sOFF.append(lf_sOFF_pre[t]); 
+    lf_sOFF = np.array(lf_sOFF); 
 
     if lf_sON[0]==0:
         lf_sON = lf_sON[1:]; 
