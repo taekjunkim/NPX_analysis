@@ -417,7 +417,7 @@ def compute_syncONs(imec_datainfo, i):
 
     nidq_sync_dur = (sync_start_end['nidq'][1]-sync_start_end['nidq'][0])/25000; 
     ap_sync_dur = (sync_start_end['ap_bin'][1]-sync_start_end['ap_bin'][0])/30000; 
-    lf_sync_dur = (sync_start_end['lf_bin'][1]-sync_start_end['lf_bin'][0])/25000; 
+    lf_sync_dur = (sync_start_end['lf_bin'][1]-sync_start_end['lf_bin'][0])/2500; 
     print(f'nidq_sync_dur (s): {nidq_sync_dur}'); 
     print(f'ap_sync_dur (s): {ap_sync_dur}'); 
     print(f'lf_sync_dur (s): {lf_sync_dur}'); 
