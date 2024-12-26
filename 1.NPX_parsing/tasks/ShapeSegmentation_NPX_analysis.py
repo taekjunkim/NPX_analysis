@@ -105,7 +105,7 @@ def main(app):
     for texID, i in enumerate(np.arange(20,101,8)):
         stim_df.loc[np.arange(i, (i+8)), 'shapeID'] = np.arange(8); 
         stim_df.loc[np.arange(i, (i+8)), 'texID'] = texID; 
-    for texID in np.arange(8):
+    for texID in np.arange(8): # because I have 8 directional textures
         rowNow = np.where(stim_df['texID']==texID)[0]; 
         stim_df.loc[rowNow, 'ori'] = 45*(texID%4); 
     stim_df.loc[np.arange(108,208), 'PS'] = 1; 
@@ -117,7 +117,7 @@ def main(app):
     path_to_save = imec_filename[:(imec_filename.rfind('/')+1)] + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
-    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
+    name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz'; 
     np.savez_compressed(name_to_save, **experiment); 
 
     """
