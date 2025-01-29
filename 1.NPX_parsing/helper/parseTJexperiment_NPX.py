@@ -680,7 +680,7 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end
 
 #%% compute_syncONs
 def compute_syncONs(imec_filename):
-    ap_binname = imec_filename; 
+    ap_binname = imec_filename[:-6]+'ap.bin'; 
 
     ### check nidq
     idx_slash = []; 
