@@ -37,7 +37,7 @@ def main(app):
     task_index_in_combine = int(app.tasknum_lineEdit.text()); 
 
     #%% get pdOnTS
-    sync_start_end = parse_NPX.compute_syncONs(dat_filename);     
+    sync_start_end = parse_NPX.compute_syncONs(imec_filename);     
     markervals, markervals_str = parse_NPX.get_markervals(dat_filename);     
     markerts, pdOnTS, pdOffTS = parse_NPX.get_event_ts(bin_filename, markervals_str, sync_start_end); 
 
