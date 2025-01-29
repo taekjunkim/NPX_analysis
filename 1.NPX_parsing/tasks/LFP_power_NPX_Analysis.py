@@ -193,7 +193,7 @@ def main(app):
 def draw_Spectra(rLFP_mtx, colnum):
 
     ### denoise LFP_mtx with gaussian_filter
-    rLFP_mtx = gaussian_filter1d(rLFP_mtx, sigma=2, axis=0, mode='reflect'); 
+    rLFP_mtx = gaussian_filter1d(rLFP_mtx, sigma=3, axis=0, mode='reflect'); 
 
     for fq in np.arange(np.shape(rLFP_mtx)[1]):
         rLFP_mtx[:,fq] = rLFP_mtx[:,fq]/np.nanmax(rLFP_mtx[:,fq]); 
@@ -224,7 +224,7 @@ def draw_Spectra(rLFP_mtx, colnum):
 
 def draw_CSD(LFP_mtx, colnum):
     ### denoise LFP_mtx with gaussian_filter
-    LFP_mtx = gaussian_filter1d(LFP_mtx, sigma=2, axis=0, mode='reflect'); 
+    LFP_mtx = gaussian_filter1d(LFP_mtx, sigma=3, axis=0, mode='reflect'); 
 
     ### compute CSD. negative of the 2nd spatial derivative
     spacing_mm = 0.02; 
