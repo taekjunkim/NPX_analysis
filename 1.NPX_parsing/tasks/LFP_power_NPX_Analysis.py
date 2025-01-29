@@ -93,7 +93,7 @@ def main(app):
 
     # based on flat LFP
     for i in np.arange(384):
-        if np.max(np.abs(LFP_mtx1[i,:]))<np.max(np.abs(LFP_mtx1))*0.1:
+        if np.max(np.abs(LFP_mtx1[i,:]))<np.max(np.abs(LFP_mtx1))*0.2:
             bad_ch.append(i); 
         
     # based on spectra
@@ -111,7 +111,7 @@ def main(app):
                 bad_ch.append(i); 
     
     # based on spectra2: too strong power (outlier)
-    too_strong = list(np.where(stats.zscore(np.nansum(LFP_mtx2,axis=1))>5)[0]); 
+    too_strong = list(np.where(stats.zscore(np.nansum(LFP_mtx2,axis=1))>3)[0]); 
     bad_ch = bad_ch + too_strong; 
 
     bad_ch = np.unique(np.array(bad_ch)); 

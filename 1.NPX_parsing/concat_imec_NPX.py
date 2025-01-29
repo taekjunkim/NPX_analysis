@@ -135,7 +135,7 @@ class MainWindow(QMainWindow):
             imec_datainfo['ap: syncOFF'].append(sync_start_end['ap_bin'][1]); 
             imec_datainfo['lf: syncOFF'].append(sync_start_end['lf_bin'][1]);                                      
 
-            """
+
             # get nidq_data
             nidq_name = imec_datainfo['nidq: fname'][i]; 
             nidq_nFileSamp = imec_datainfo['nidq: nFileSamp'][i]; 
@@ -196,7 +196,7 @@ class MainWindow(QMainWindow):
 
             # remove memmap
             del nidq_data, ap_data, lf_data 
-            """
+
 
         np.save(datainfo_name, imec_datainfo); 
         print('imec_datainfo was saved'); 
