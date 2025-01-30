@@ -117,8 +117,9 @@ def main(app):
 
     bad_ch = np.unique(np.array(bad_ch)); 
 
-    LFP_mtx1[bad_ch,:] = np.nan; 
-    LFP_mtx2[bad_ch,:] = np.nan; 
+    if len(bad_ch)>0:
+        LFP_mtx1[bad_ch,:] = np.nan; 
+        LFP_mtx2[bad_ch,:] = np.nan; 
 
     # interpolate LFP_mtx1
     for i in np.arange(np.shape(LFP_mtx1)[1]):
