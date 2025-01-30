@@ -101,8 +101,8 @@ def main(app):
     for i in np.arange(384):
         fpos1 = np.where((freq>30) & (freq<50))[0]; 
         fpos2 = np.where((freq>50) & (freq<70))[0]; 
-        if np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i,fpos1])*2:
-            bad_ch.append(i); 
+        #if np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i,fpos1])*2:
+        #    bad_ch.append(i); 
         if (i>0) and (i<383):
             if ((np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i-1,fpos2])*1.5) and 
                 (np.nanmean(LFP_mtx2[i,fpos2])>np.nanmean(LFP_mtx2[i+1,fpos2]))): 
