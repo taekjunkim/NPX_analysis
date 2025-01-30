@@ -237,7 +237,7 @@ def draw_CSD(LFP_mtx, colnum):
     plt.subplot(2,4,colnum); 
     plt.imshow(LFP_mtx, aspect='auto', origin='lower', cmap='jet', vmin = -level_max, vmax = level_max); 
     for i in np.arange(0,192,10):
-        plt.plot(LFP_mtx[i,:]*8/level_max + i,'k'); 
+        plt.plot(LFP_mtx[i,:]*15/level_max + i,'k'); 
     plt.xticks(np.arange(0,1251,250), labels=np.arange(-100,401,100)); 
     plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
     plt.ylim([0, 191]); 
@@ -248,7 +248,7 @@ def draw_CSD(LFP_mtx, colnum):
     plt.subplot(2,4,colnum+4); 
     plt.imshow(LFP_mtx1, aspect='auto', origin='lower', cmap='jet', vmin = -level_max1, vmax = level_max1); 
     for i in np.arange(0,190,10):
-        plt.plot(LFP_mtx1[i,:]*8/level_max1 + i,'k'); 
+        plt.plot(LFP_mtx1[i,:]*15/level_max1 + i,'k'); 
     plt.xticks(np.arange(0,1251,250), labels=np.arange(-100,401,100)); 
     plt.yticks(np.arange(-1,192,10), labels=np.arange(20,3860,200));     
     plt.ylim([0, 190]); 
