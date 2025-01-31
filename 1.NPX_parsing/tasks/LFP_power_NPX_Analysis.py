@@ -169,9 +169,9 @@ def main(app):
     experiment = dict(); 
     experiment['filename'] = dat_filename; 
     experiment['NPX_chpos'] = NPX_chpos; 
-    experiment['LFP_mtx_raw'] = LFP_mtx;    
-    experiment['LFP_mtx1_avg'] = LFP_mtx1;    
-    experiment['LFP_mtx2_Spectra'] = LFP_mtx2;    
+    experiment['LFP_mtx_raw'] = LFP_mtx.astype(np.float32);    
+    experiment['LFP_mtx1_avg'] = LFP_mtx1.astype(np.float32);    
+    experiment['LFP_mtx2_Spectra'] = LFP_mtx2.astype(np.float32);    
 
     name_to_save = path_to_save + bin_filename[(bin_filename.rfind('/')+1):-8] + 'npz';
     np.savez_compressed(name_to_save, **experiment); 

@@ -680,7 +680,7 @@ def get_spikeTS(imec_filename, task_index_in_combine, man_sorted, sync_start_end
     return id_all, spikets_all, chpos_all; 
 
 #%% compute_syncONs
-def compute_syncONs(imec_filename):
+def compute_syncONs(imec_filename, ap_pass=False):
     ap_binname = imec_filename[:-6]+'ap.bin'; 
 
     ### check nidq
@@ -784,40 +784,48 @@ def compute_syncONs(imec_filename):
     last_seconds = (lf_nFileSamp-lf_sOFF[-1])/lf_imSampRate; 
     last_seconds = int(last_seconds+1); 
 
-    ap_meta = get_metaDict(ap_binname[:-3]+'meta'); 
-    ap_nChan = int(ap_meta['nSavedChans']); 
-    ap_nFileSamp = int(int(ap_meta['fileSizeBytes'])/(2*ap_nChan)); 
-    ap_imSampRate = int(ap_meta['imSampRate']); 
+    if ap_pass==False:
+        ap_meta = get_metaDict(ap_binname[:-3]+'meta'); 
+        ap_nChan = int(ap_meta['nSavedChans']); 
+        ap_nFileSamp = int(int(ap_meta['fileSizeBytes'])/(2*ap_nChan)); 
+        ap_imSampRate = int(ap_meta['imSampRate']); 
 
-    ap_data = np.memmap(ap_binname, dtype='int16', 
-                        shape=(ap_nFileSamp, ap_nChan), offset=0, mode='r',order='C'); 
-    ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*10),384]==64)[0]; 
-    ap_sONs_pre = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
-    ap_sONs = []; 
-    for t in np.arange(len(ap_sONs_pre)):
-        if np.min(ap_data[ap_sONs_pre[t]:ap_sONs_pre[t]+30,384])>0:
-            ap_sONs.append(ap_sONs_pre[t]); 
-    ap_sONs = np.array(ap_sONs); 
+        ap_data = np.memmap(ap_binname, dtype='int16', 
+                            shape=(ap_nFileSamp, ap_nChan), offset=0, mode='r',order='C'); 
+        ap_sHigh_start = np.where(ap_data[:int(ap_imSampRate*10),384]==64)[0]; 
+        ap_sONs_pre = np.concatenate(([ap_sHigh_start[0]], ap_sHigh_start[np.where(np.diff(ap_sHigh_start)>10)[0]+1])); 
+        ap_sONs = []; 
+        for t in np.arange(len(ap_sONs_pre)):
+            if np.min(ap_data[ap_sONs_pre[t]:ap_sONs_pre[t]+30,384])>0:
+                ap_sONs.append(ap_sONs_pre[t]); 
+        ap_sONs = np.array(ap_sONs); 
 
-    if ap_sONs[0]==0:
-        ap_sON = ap_sONs[1]; 
+        if ap_sONs[0]==0:
+            ap_sON = ap_sONs[1]; 
+        else:
+            ap_sON = ap_sONs[0]; 
+
+        ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*last_seconds):,384]==64)[0]; 
+        ap_sOFFs_pre = ap_sHigh_end + ap_nFileSamp - ap_imSampRate*last_seconds;    
+        ap_sOFFs = []; 
+        for t in np.arange(len(ap_sOFFs_pre)):
+            if np.min(ap_data[ap_sOFFs_pre[t]-30:ap_sOFFs_pre[t],384])>0:
+                ap_sOFFs.append(ap_sOFFs_pre[t]); 
+        ap_sOFF = ap_sOFFs[-1]; 
+        imSampRate = (ap_sOFF - ap_sON) / nidq_sync_dur; 
+        syncON = ap_sON;     
+
+        sync_start_end = dict(); 
+        sync_start_end['nidq'] = np.array([nidq_sON[sON_valid_idx0], nidq_sOFF[-1]]); 
+        sync_start_end['ap_bin'] = np.array([ap_sON, ap_sOFF]); 
+        sync_start_end['lf_bin'] = np.array([lf_sON[0], lf_sOFF[-1]]); 
+    
     else:
-        ap_sON = ap_sONs[0]; 
+        sync_start_end = dict(); 
+        sync_start_end['nidq'] = np.array([nidq_sON[sON_valid_idx0], nidq_sOFF[-1]]); 
+        sync_start_end['ap_bin'] = np.array([]); 
+        sync_start_end['lf_bin'] = np.array([lf_sON[0], lf_sOFF[-1]]); 
 
-    ap_sHigh_end = np.where(ap_data[-int(ap_imSampRate*last_seconds):,384]==64)[0]; 
-    ap_sOFFs_pre = ap_sHigh_end + ap_nFileSamp - ap_imSampRate*last_seconds;    
-    ap_sOFFs = []; 
-    for t in np.arange(len(ap_sOFFs_pre)):
-        if np.min(ap_data[ap_sOFFs_pre[t]-30:ap_sOFFs_pre[t],384])>0:
-            ap_sOFFs.append(ap_sOFFs_pre[t]); 
-    ap_sOFF = ap_sOFFs[-1]; 
-    imSampRate = (ap_sOFF - ap_sON) / nidq_sync_dur; 
-    syncON = ap_sON;     
-
-    sync_start_end = dict(); 
-    sync_start_end['nidq'] = np.array([nidq_sON[sON_valid_idx0], nidq_sOFF[-1]]); 
-    sync_start_end['ap_bin'] = np.array([ap_sON, ap_sOFF]); 
-    sync_start_end['lf_bin'] = np.array([lf_sON[0], lf_sOFF[-1]]); 
 
     return sync_start_end; 
 
