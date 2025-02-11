@@ -16,8 +16,8 @@ import os;
 #import sys;
 #sys.path.append('./helper'); 
 #sys.path.append('./makeSDF'); 
-import makeSDF;
-import parseTJexperiment_NPX as parse_NPX;
+from helper import makeSDF;
+from helper import parseTJexperiment_NPX as parse_NPX;
 import json;
 import gzip;
 
@@ -197,7 +197,7 @@ def main(app):
             data_fitted0 = twoD_Gaussian(posData, *popt);     
             fit_r = np.corrcoef(data_fitted0, RFmap_norm.ravel())[0,1]; 
 
-            if fit_r>np.sqrt(0.64):
+            if fit_r>np.sqrt(0.49):
                 data_fitted = twoD_Gaussian(posData2, *popt); 
 
                 if unit_id in experiment['id_sua']:

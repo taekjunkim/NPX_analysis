@@ -64,6 +64,7 @@ class MainWindow(QMainWindow):
         #self.combobox.addItems(['Kiani_gaze']);                        
         self.combobox.addItems(['KS_DriftMap']);                 
         self.combobox.addItems(['LFP_power']);         
+        self.combobox.addItems(['Molly_ShapeFill']);                 
         self.combobox.addItems(['PositionInvariance']);  
         self.combobox.addItems(['RndDotRFmap']);         
         #self.combobox.addItems(['SaliencyPS']);          
@@ -159,6 +160,9 @@ class MainWindow(QMainWindow):
         if self.combobox.currentText() == 'LFP_power':
             from tasks import LFP_power_NPX_Analysis as LFP_p_NPX; 
             LFP_p_NPX.main(self); 
+        elif self.combobox.currentText() == 'Molly_ShapeFill':
+            from tasks import Molly_ShapeFill_NPX_Analysis as Molly_SF_NPX; 
+            Molly_SF_NPX.main(self); 
         elif self.combobox.currentText() == 'CategoryTask':
             from tasks import CategoryTask_NPX_Analysis as Category_NPX; 
             Category_NPX.main(self); 
