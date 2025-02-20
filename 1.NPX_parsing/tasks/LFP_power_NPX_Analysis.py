@@ -57,6 +57,7 @@ def main(app):
             break; 
     
     ### LFP cut, align at pdON
+    LFP_mtx_raw = np.empty((384,int(imSampRate*0.5),len(pdOnTS))); 
     LFP_mtx = np.empty((384,int(imSampRate*0.5),len(pdOnTS))); 
     LFP_TS = (np.arange(np.shape(rawData)[1]) - syncON)/imSampRate; 
     for i in range(len(pdOnTS)):
@@ -64,6 +65,7 @@ def main(app):
         tsNow = tsNow[:int(0.5*imSampRate)]; 
 
         LFP_now = rawData[:384, tsNow]; 
+        LFP_mtx_raw[:,:,i] = LFP_now; 
 
         ### subtract baseline
         LFP_now = LFP_now - np.mean(LFP_now[:,:int(0.1*imSampRate)],axis=1).reshape(384,1); 
@@ -71,6 +73,7 @@ def main(app):
         ### apply butter bandpass filter
         LFP_now = butter_bandpass_filter(LFP_now, lowcut=0.3, highcut=250, fs=imSampRate, order=4); 
         LFP_mtx[:,:,i] = LFP_now; 
+
 
     ### Fix ch 191
     LFP_mtx[191,:,:] = (LFP_mtx[189,:,:]+LFP_mtx[193,:,:])/2; 
@@ -169,7 +172,7 @@ def main(app):
     experiment = dict(); 
     experiment['filename'] = dat_filename; 
     experiment['NPX_chpos'] = NPX_chpos; 
-    experiment['LFP_mtx_raw'] = LFP_mtx.astype(np.float32);    
+    #experiment['LFP_mtx_raw'] = LFP_mtx_raw.astype(np.float32);    
     experiment['LFP_mtx1_avg'] = LFP_mtx1.astype(np.float32);    
     experiment['LFP_mtx2_Spectra'] = LFP_mtx2.astype(np.float32);    
 
@@ -195,7 +198,7 @@ def main(app):
 def draw_Spectra(rLFP_mtx, colnum):
 
     ### denoise LFP_mtx with gaussian_filter
-    rLFP_mtx = gaussian_filter1d(rLFP_mtx, sigma=3, axis=0, mode='reflect'); 
+    rLFP_mtx = gaussian_filter1d(rLFP_mtx, sigma=5, axis=0, mode='reflect'); 
 
     for fq in np.arange(np.shape(rLFP_mtx)[1]):
         rLFP_mtx[:,fq] = rLFP_mtx[:,fq]/np.nanmax(rLFP_mtx[:,fq]); 
@@ -226,7 +229,7 @@ def draw_Spectra(rLFP_mtx, colnum):
 
 def draw_CSD(LFP_mtx, colnum):
     ### denoise LFP_mtx with gaussian_filter
-    LFP_mtx = gaussian_filter1d(LFP_mtx, sigma=3, axis=0, mode='reflect'); 
+    LFP_mtx = gaussian_filter1d(LFP_mtx, sigma=5, axis=0, mode='reflect'); 
 
     ### compute CSD. negative of the 2nd spatial derivative
     spacing_mm = 0.02; 
