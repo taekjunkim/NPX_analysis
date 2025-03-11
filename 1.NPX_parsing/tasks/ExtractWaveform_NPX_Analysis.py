@@ -50,8 +50,8 @@ def main(app):
                 cid = ci_df['id'][idx]; 
 
             # We get the waveforms of the cluster.        
-            waveforms = model.get_cluster_spike_waveforms(cid); 
             try:
+                waveforms = model.get_cluster_spike_waveforms(cid);                 
                 n_spikes, n_samples, n_channels_loc = waveforms.shape; 
                 # We get the channel ids where the waveforms are located.
                 channel_ids = model.get_cluster_channels(cid); 
@@ -71,13 +71,13 @@ def main(app):
     path_to_save = imec_dataFolder + 'processed/'; 
     if os.path.exists(path_to_save)==0:
         os.mkdir(path_to_save); 
-    name_to_save = imec_dataFolder + 'processed/mean_waveform.npz';    
-    np.savez_compressed(name_to_save, **mean_wf)
+    #name_to_save = imec_dataFolder + 'processed/mean_waveform.npz';    
+    #np.savez_compressed(name_to_save, **mean_wf)
 
-    #name_to_save = imec_dataFolder + 'processed/mean_waveform.json.gz'; 
-    #f = gzip.GzipFile(name_to_save,'w');    
-    #f.write(json.dumps(mean_wf, cls=NumpyEncoder).encode('utf-8')); 
-    #f.close(); 
+    name_to_save = imec_dataFolder + 'processed/mean_waveform.json.gz'; 
+    f = gzip.GzipFile(name_to_save,'w');    
+    f.write(json.dumps(mean_wf, cls=NumpyEncoder).encode('utf-8')); 
+    f.close(); 
     print('processed file was saved'); 
 
 
