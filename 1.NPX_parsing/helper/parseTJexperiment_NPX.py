@@ -19,6 +19,9 @@ import glob;
 
 #%%
 def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app, id_from_one=True):
+    """
+    Be careful. You need to check if PYPE sent 0-based stim index or 1-based stim index
+    """
 
     ### spikets
     """

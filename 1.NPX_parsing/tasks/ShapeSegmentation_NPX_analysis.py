@@ -13,15 +13,15 @@ Animal did a simple fixation task while visual stimuli were presented.
 #%%
 import matplotlib.pyplot as plt;
 
-#import sys;
-#sys.path.append('./helper'); 
+import sys;
+sys.path.append('./helper'); 
 
 import os
 import numpy as np;
-import makeSDF;
+from helper import makeSDF;
 import glob; 
 
-import parseTJexperiment_NPX as parse_NPX;
+from helper import parseTJexperiment_NPX as parse_NPX;
 import json;
 import gzip;
 import pandas as pd; 
@@ -44,8 +44,8 @@ def main(app):
 
     #%% get experiment
     prevTime = 0.3; 
-    numStims = 208;     """(50 stims + 1 blank) x 4 fixations """
-    experiment = parse_NPX.main(bin_filename, dat_filename, prevTime, numStims, imec_filename, app); 
+    numStims = 209;     """(50 stims + 1 blank) x 4 fixations """
+    experiment = parse_NPX.main(bin_filename, dat_filename, prevTime, numStims, imec_filename, app, id_from_one=False); 
     experiment['StimDur'] = experiment['stimon']; 
 
     TimeOfInterest = np.arange(int(prevTime*1000),int(prevTime*1000+experiment['StimDur']+100+1));
