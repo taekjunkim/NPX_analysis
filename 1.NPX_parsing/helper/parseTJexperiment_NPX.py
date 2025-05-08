@@ -18,7 +18,7 @@ import pandas as pd;
 import glob; 
 
 #%%
-def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
+def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app, id_from_one=True):
 
     ### spikets
     """
@@ -121,7 +121,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
 
     ### Prepare to get stimulus information parameters                
     if stimITIOns[0] != counter:
-        print('The first start_iti code is offset');
+        print('The first start_iti code is offset'); 
     stimOns = np.where(markervals==parseParams['stimOnCode'])[0];        
     
     error_indices = []; 
@@ -145,7 +145,7 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
                 print('Found pause, but no unpause at '+str(index+1));
                 print('continuing from next start_iti');                
                 error_indices.append(index);           
-                continue;
+                continue; 
             index = index + 2; 
             next_code = markervals[index];
 
@@ -240,21 +240,23 @@ def main(bin_filename, dat_filename, prevTime, numConds, imec_filename, app):
             elif code != parseParams['stimOffCode']:          
                 print('Missing StimOff or fixlost code, found '+str(code)+' at '+str(codeIndex))
                 print('continuing from next start_iti');                                        
-                error_indices.append(codeIndex);
-                trialCode = parseParams['codeError'];
+                error_indices.append(codeIndex); 
+                trialCode = parseParams['codeError']; 
                 continue;                
             else:
                 stimOffTime = markerts[codeIndex]; 
                 
             ## having made it here, we can now call this a completed stimulus presentation and record the results                
             sIndex = stimIDCodeToStore - parseParams['stimIDOffset']; 
-            sIndex = sIndex - 1; # for zero-based indexing in python (Matlab doesn't need this);
+            if id_from_one==True:
+                sIndex = sIndex - 1; # for zero-based indexing in python (Matlab doesn't need this);
+            
             if stimStructs[sIndex]['numInstances'] == []:
                 stimStructs[sIndex]['numInstances'] = 1; 
             else:                    
                 stimStructs[sIndex]['numInstances'] = stimStructs[sIndex]['numInstances'] + 1;
                 
-            inst = stimStructs[sIndex]['numInstances'];
+            inst = stimStructs[sIndex]['numInstances']; 
             inst = inst - 1; # for zero-based indexing in python (Matlab doesn't need this);
             stimStructs[sIndex]['timeOn'].append(stimOnTime);               
             stimStructs[sIndex]['timeOff'].append(stimOffTime);               

@@ -72,7 +72,7 @@ def main(app):
     #%% get experiment
     prevTime = 0.3; 
     numStims = 509;     """ 508 stims + 1 blank """
-    experiment = parse_NPX.main(bin_filename, dat_filename, prevTime, numStims, imec_filename, app); 
+    experiment = parse_NPX.main(bin_filename, dat_filename, prevTime, numStims, imec_filename, app, id_from_one=False); 
     experiment['StimDur'] = experiment['stimon']; 
 
     TimeOfInterest = np.arange(int(prevTime*1000),int(prevTime*1000+experiment['StimDur']+100+1)); 
