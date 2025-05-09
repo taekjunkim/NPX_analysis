@@ -29,7 +29,7 @@ def ismember(a_vec, b_vec):
     common_ind = b_ind[np.isin(b_unique, common_unique, assume_unique=True)]
     return bool_ind, common_ind[common_inv]
 
-def loadKSdir(imec_dataFolder):
+def loadKSdir(imec_dataFolder, app):
     sampRate = 30000.0; 
     spikeStruct = dict(); 
     spikeTimes = np.load(imec_dataFolder+'spike_times.npy')/sampRate; 
@@ -41,8 +41,14 @@ def loadKSdir(imec_dataFolder):
 
     clu = np.load(imec_dataFolder+'spike_clusters.npy'); 
     cids = np.unique(clu); 
-    cgs_df = pd.read_csv(imec_dataFolder+'cluster_group.tsv', sep='\t');
-    noise_cluster = cgs_df['cluster_id'][cgs_df['group']=='noise'].values; 
+
+    man_sorted = app.sorted_checkbox.isChecked(); 
+    if man_sorted==True:
+        cgs_df = pd.read_csv(imec_dataFolder+'cluster_info.tsv', sep='\t'); 
+        noise_cluster = cgs_df['cluster_id'][(cgs_df['group']=='noise') | (cgf_df['group']=='mua')].values; 
+    else:
+        cgs_df = pd.read_csv(imec_dataFolder+'cluster_group.tsv', sep='\t');
+        noise_cluster = cgs_df['cluster_id'][cgs_df['group']=='noise'].values; 
 
     spikeStruct['spikeTimes'] = spikeTimes[~ismember(clu,noise_cluster)[0]]; 
     spikeStruct['spikeTemplates'] = spikeTemplates[~ismember(clu,noise_cluster)[0]]; 
@@ -70,7 +76,7 @@ def main(app):
     imec_dataFolder = imec_filename[:(imec_filename.rfind('/')+1)]; 
 
     ### Load KS dir
-    sp = loadKSdir(imec_dataFolder); 
+    sp = loadKSdir(imec_dataFolder, app); 
     print('Spike structure has been loaded'); 
 
     ycoords = sp['ycoords']; 
