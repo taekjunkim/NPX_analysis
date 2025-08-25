@@ -87,7 +87,7 @@ def main(app):
     for ch in np.arange(384):
         for i in range(len(pdOnTS)):
             sigNow = LFP_mtx[ch,:,i].squeeze(); 
-            f,pxx = z(sigNow,fs=imSampRate); 
+            f,pxx = periodogram(sigNow,fs=imSampRate); 
             LFP_mtx2[ch,:,i] = pxx[:len(freq)]; 
         print(f'ch#{ch} was done');     
     LFP_mtx2 = np.mean(LFP_mtx2, axis=2);     
